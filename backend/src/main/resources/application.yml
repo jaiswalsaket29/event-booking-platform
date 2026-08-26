@@ -2,7 +2,7 @@ spring:
   application:
     name: eventbooking
   datasource:
-    url: jdbc:postgresql://localhost:5432/eventbooking
+    url: jdbc:postgresql://localhost:5433/eventbooking
     username: eventbooking
     password: devpassword
   jpa:
