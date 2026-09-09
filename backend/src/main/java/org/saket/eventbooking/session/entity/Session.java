@@ -1,11 +1,11 @@
-package org.saket.eventbooking.session;
+package org.saket.eventbooking.session.entity;
 
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.saket.eventbooking.event.Event;
-import org.saket.eventbooking.location.Hall;
-import org.saket.eventbooking.location.Location;
+import org.saket.eventbooking.event.entity.Event;
+import org.saket.eventbooking.location.entity.Hall;
+import org.saket.eventbooking.location.entity.Location;
 import org.saket.eventbooking.session.enums.PricingMode;
 import org.saket.eventbooking.session.enums.SeatingType;
 import org.saket.eventbooking.session.enums.SessionStatus;

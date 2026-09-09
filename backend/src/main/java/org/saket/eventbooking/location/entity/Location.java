@@ -1,4 +1,4 @@
-package org.saket.eventbooking.location;
+package org.saket.eventbooking.location.entity;
 
 import org.saket.eventbooking.location.enums.VenueType;
 import jakarta.persistence.*;

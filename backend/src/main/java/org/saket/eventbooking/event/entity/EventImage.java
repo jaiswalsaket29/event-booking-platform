@@ -1,4 +1,4 @@
-package org.saket.eventbooking.event;
+package org.saket.eventbooking.event.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -9,14 +9,12 @@ import lombok.Setter;
 import java.util.UUID;
 
 @Entity
-@Table(name = "event_artists", uniqueConstraints = {
-        @UniqueConstraint(name = "uq_event_artist", columnNames = {"event_id", "artist_id"})
-})
+@Table(name = "event_images")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class EventArtist {
+public class EventImage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,9 +24,9 @@ public class EventArtist {
     @JoinColumn(name = "event_id", nullable = false)
     private Event event;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "artist_id", nullable = false)
-    private Artist artist;
+    @Column(name = "image_url", nullable = false)
+    private String imageUrl;
 
-    private String role;
+    @Column(name = "sort_order", nullable = false)
+    private int sortOrder;
 }

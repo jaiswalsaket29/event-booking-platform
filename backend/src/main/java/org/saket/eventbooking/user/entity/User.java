@@ -1,4 +1,4 @@
-package org.saket.eventbooking.user;
+package org.saket.eventbooking.user.entity;
 
 
 import jakarta.persistence.*;

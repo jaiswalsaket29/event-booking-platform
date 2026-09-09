@@ -1,4 +1,4 @@
-package org.saket.eventbooking.event;
+package org.saket.eventbooking.event.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
