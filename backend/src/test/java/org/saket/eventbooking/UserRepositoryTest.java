@@ -2,8 +2,8 @@ package org.saket.eventbooking;
 
 
 import org.junit.jupiter.api.Test;
-import org.saket.eventbooking.user.User;
-import org.saket.eventbooking.user.UserRepository;
+import org.saket.eventbooking.user.entity.User;
+import org.saket.eventbooking.user.repository.UserRepository;
 import org.saket.eventbooking.user.enums.AuthProvider;
 import org.saket.eventbooking.user.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +37,7 @@ public class UserRepositoryTest {
         user.setEmail("test@example.com");
         user.setPasswordHash("hashed");
         user.setRole(Role.USER);
-        user.setEmailVerified(false);now
+        user.setEmailVerified(false);
         user.setAuthProvider(AuthProvider.LOCAL);
         user.setCreatedAt(Instant.now());
 

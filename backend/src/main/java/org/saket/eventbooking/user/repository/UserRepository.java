@@ -1,4 +1,4 @@
-package org.saket.eventbooking.user;
+package org.saket.eventbooking.user.repository;
 
 import org.saket.eventbooking.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
