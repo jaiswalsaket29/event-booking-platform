@@ -1,8 +1,10 @@
 package org.saket.eventbooking.auth.service;
 
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.auth.dto.AuthResponse;
 import org.saket.eventbooking.auth.exception.EmailAlreadyExistsException;
 import org.saket.eventbooking.auth.exception.InvalidCredentialsException;
+import org.saket.eventbooking.common.security.JwtTokenProvider;
 import org.saket.eventbooking.user.dto.LoginRequest;
 import org.saket.eventbooking.user.dto.SignupRequest;
 import org.saket.eventbooking.user.dto.UserResponse;
@@ -40,7 +42,9 @@ public class AuthService {
         return toResponse(saved);
     }
 
-    public UserResponse login(LoginRequest request) {
+    private final JwtTokenProvider jwtTokenProvider;
+
+    public AuthResponse login(LoginRequest request) {
         User user = userService.findByEmail(request.email())
                 .orElseThrow(InvalidCredentialsException::new);
 
@@ -50,7 +54,9 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
 
-        return toResponse(user);
+        String token = jwtTokenProvider.generateAccessToken(user);
+
+        return new AuthResponse(token, toResponse(user));
     }
 
     private UserResponse toResponse(User user) {

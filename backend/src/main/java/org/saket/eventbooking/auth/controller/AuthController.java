@@ -1,6 +1,7 @@
 package org.saket.eventbooking.auth.controller;
 
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.auth.dto.AuthResponse;
 import org.saket.eventbooking.auth.service.AuthService;
 import org.saket.eventbooking.user.dto.LoginRequest;
 import org.saket.eventbooking.user.dto.SignupRequest;
@@ -22,7 +23,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
     }
 }
