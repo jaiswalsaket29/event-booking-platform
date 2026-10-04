@@ -11,6 +11,8 @@ services:
       - pgdata:/var/lib/postgresql/data
   redis:
     image: redis:7
+    # Ex = publish key-expired events; booking holds are released when their TTL key expires.
+    command: ["redis-server", "--notify-keyspace-events", "Ex"]
     ports:
       - "6379:6379"
 

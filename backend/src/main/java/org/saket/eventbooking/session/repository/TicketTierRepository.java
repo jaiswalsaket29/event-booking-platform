@@ -24,6 +24,11 @@ public interface TicketTierRepository extends JpaRepository<TicketTier, UUID> {
     @Query("select t from TicketTier t join fetch t.session where t.id = :id")
     Optional<TicketTier> findByIdForUpdate(@Param("id") UUID id);
 
+    /** Booking-path lock on one tier of one session. No join, so only the tier row is locked. */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select t from TicketTier t where t.id = :id and t.session.id = :sessionId")
+    Optional<TicketTier> lockByIdAndSessionId(@Param("id") UUID id, @Param("sessionId") UUID sessionId);
+
     @Modifying(flushAutomatically = true)
     @Query("delete from TicketTier t where t.session.id = :sessionId")
     int deleteBySessionId(@Param("sessionId") UUID sessionId);
