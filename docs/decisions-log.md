@@ -26,3 +26,9 @@ Template:
 - Alternative considered: RFC 7807 `ProblemDetail` via `ResponseEntityExceptionHandler` (trade-off: it's a standard, but its shape is less convenient for form field errors and the roadmap specified this body).
 - Interview hook: "Errors from the filter chain and from controllers come out in the same JSON shape, because the frontend shouldn't need to know which layer said no."
 - Also: integration tests now share one Testcontainers Postgres through a cached Spring context (`support/IntegrationTest`), so `BackendApplicationTests` no longer needs the compose DB or `.env`.
+
+## Seeded admin account (2026-10-04)
+- What: Flyway `V6__seed_admin_user.sql` inserts one ADMIN (`admin@eventbooking.dev`, BCrypt hash of a dev password documented in the README), `ON CONFLICT (email) DO NOTHING`.
+- Why this way: public signup can never grant ADMIN, so the first admin has to come from outside the API. A migration makes every environment (including Testcontainers) start with a known admin, and the integration tests log in with it.
+- Alternative considered: a startup `CommandLineRunner` reading the admin email/password from env (trade-off: no password hash in git, but the account then depends on runtime config; a reasonable prod upgrade).
+- Interview hook: "Admins are provisioned, never self-registered; the seed holds only a BCrypt hash, and the dev password is documented as dev-only."
