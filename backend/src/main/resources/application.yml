@@ -42,6 +42,14 @@ app:
       REGULAR: 1.0
       PREMIUM: 1.5
       RECLINER: 2.0
+  booking:
+    # How long a PENDING booking holds its seats/capacity before they go back on sale.
+    hold-ttl: ${BOOKING_HOLD_TTL:10m}
+    max-tickets-per-booking: 10
+    # Safety net: the sweeper expires PENDING bookings older than hold-ttl + sweep-grace
+    # (covers expiry events missed while the app was down).
+    sweep-grace: 30s
+    configure-keyspace-notifications: true
   seed:
     # Seed the demo catalog on startup when the database has no events (DemoDataSeeder).
     demo-data: ${SEED_DEMO_DATA:true}

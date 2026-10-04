@@ -1,0 +1,33 @@
+package org.saket.eventbooking.booking.controller;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.booking.dto.BookingResponse;
+import org.saket.eventbooking.booking.dto.CreateBookingRequest;
+import org.saket.eventbooking.booking.service.BookingService;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.UUID;
+
+/** The signed-in user's bookings. */
+@RestController
+@RequestMapping("/api/v1/bookings")
+@RequiredArgsConstructor
+public class BookingController {
+
+    private final BookingService bookingService;
+
+    /** Holds the tickets for {@code app.booking.hold-ttl} and returns the PENDING booking. */
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public BookingResponse create(@AuthenticationPrincipal UUID userId,
+                                  @Valid @RequestBody CreateBookingRequest request) {
+        return bookingService.create(userId, request);
+    }
+}
