@@ -11,7 +11,8 @@ import java.util.regex.Pattern;
 /** Test double that keeps sent emails in memory so tests can pull tokens out of the links. */
 public class RecordingEmailService implements EmailService {
 
-    public record SentEmail(String to, String subject, String body) {}
+    /** {@code thread} lets tests check that @Async sending really happened off the caller's thread. */
+    public record SentEmail(String to, String subject, String body, String thread) {}
 
     private static final Pattern TOKEN_PARAM = Pattern.compile("[?&]token=([A-Za-z0-9_-]+)");
 
@@ -19,7 +20,7 @@ public class RecordingEmailService implements EmailService {
 
     @Override
     public void send(String to, String subject, String body) {
-        sent.add(new SentEmail(to, subject, body));
+        sent.add(new SentEmail(to, subject, body, Thread.currentThread().getName()));
     }
 
     public Optional<SentEmail> lastTo(String to) {

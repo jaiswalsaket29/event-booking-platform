@@ -155,6 +155,29 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- QR codes for confirmed bookings -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+            <!-- only MatrixToImageWriter is used (JDK ImageIO); skip the CLI and imaging extras -->
+            <exclusions>
+                <exclusion>
+                    <groupId>com.beust</groupId>
+                    <artifactId>jcommander</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.github.jai-imageio</groupId>
+                    <artifactId>jai-imageio-core</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <dependency>
             <groupId>me.paulschwarz</groupId>
             <artifactId>springboot4-dotenv</artifactId>

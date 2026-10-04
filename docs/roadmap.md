@@ -43,7 +43,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] Booking/payment state machine with terminal states enforced in one place.
 - [x] Retry cap, explicit idempotent release on failure.
 - [x] Webhook endpoint `POST /api/v1/payments/webhook`, idempotent on `transactionId`, signature-checked.
-- [ ] On `CONFIRMED`: generate `bookingReference`, QR (zxing) at `GET /api/v1/bookings/{id}/qr` (PNG), confirmation email via `EmailService` (`@Async`).
+- [x] On `CONFIRMED`: generate `bookingReference`, QR (zxing) at `GET /api/v1/bookings/{id}/qr` (PNG), confirmation email via `EmailService` (`@Async`).
 - [ ] Admin: bookings list with filters, dashboard stats endpoint (bookings/revenue per day, top events).
 
 ### Phase 6: Polish
