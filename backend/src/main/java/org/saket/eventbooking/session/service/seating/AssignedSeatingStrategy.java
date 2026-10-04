@@ -60,7 +60,20 @@ public class AssignedSeatingStrategy implements SeatingStrategy {
     }
 
     @Override
-    public void release(Session session, ReleaseRequest request) {
+    public void confirm(Session session, HeldInventory held) {
+        for (SessionSeat seat : sessionSeatRepository.lockBySessionIdAndIds(session.getId(), held.sessionSeatIds())) {
+            if (seat.getStatus() != SessionSeatStatus.LOCKED) {
+                // Expiry and confirmation are serialized on the booking row, so a paid hold's seats are
+                // always still LOCKED here; anything else is a bug and must roll back.
+                throw new IllegalStateException("Seat " + seat.getId() + " is " + seat.getStatus() + ", expected LOCKED");
+            }
+            seat.setStatus(SessionSeatStatus.BOOKED);
+            seat.setLockedAt(null);
+        }
+    }
+
+    @Override
+    public void release(Session session, HeldInventory request) {
         if (request.sessionSeatIds() == null || request.sessionSeatIds().isEmpty()) {
             return;
         }

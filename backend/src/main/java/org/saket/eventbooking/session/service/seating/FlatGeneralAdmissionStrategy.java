@@ -43,7 +43,7 @@ public class FlatGeneralAdmissionStrategy implements SeatingStrategy {
     }
 
     @Override
-    public void release(Session session, ReleaseRequest request) {
+    public void release(Session session, HeldInventory request) {
         lockAndRefresh(session);
         session.setAvailableCapacity(session.getAvailableCapacity() + request.quantity());
     }

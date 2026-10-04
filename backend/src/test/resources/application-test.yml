@@ -12,3 +12,7 @@ app:
     # the schedule is off; tests call StaleHoldSweeper.expireStale(...) with a chosen "now"
     sweeper:
       enabled: false
+  payments:
+    simulated:
+      # deterministic: charges finish synchronously; webhook delivery is tested explicitly
+      mode: SYNC

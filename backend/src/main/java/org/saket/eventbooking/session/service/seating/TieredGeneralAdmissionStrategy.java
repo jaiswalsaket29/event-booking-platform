@@ -48,7 +48,7 @@ public class TieredGeneralAdmissionStrategy implements SeatingStrategy {
     }
 
     @Override
-    public void release(Session session, ReleaseRequest request) {
+    public void release(Session session, HeldInventory request) {
         ticketTierRepository.lockByIdAndSessionId(request.ticketTierId(), session.getId()).ifPresent(tier ->
                 // Never above total: an admin may have shrunk the tier while the hold was open.
                 tier.setAvailableCapacity(Math.min(tier.getTotalCapacity(),

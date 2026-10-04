@@ -9,7 +9,7 @@ import org.saket.eventbooking.session.enums.SessionStatus;
 import org.saket.eventbooking.session.repository.SessionRepository;
 import org.saket.eventbooking.session.service.seating.Hold;
 import org.saket.eventbooking.session.service.seating.HoldRequest;
-import org.saket.eventbooking.session.service.seating.ReleaseRequest;
+import org.saket.eventbooking.session.service.seating.HeldInventory;
 import org.saket.eventbooking.session.service.seating.SeatingStrategy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -48,10 +48,17 @@ public class SessionInventoryService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public void release(ReleaseRequest request) {
+    public void release(HeldInventory request) {
         Session session = sessionRepository.findById(request.sessionId())
                 .orElseThrow(() -> new ResourceNotFoundException("Session", request.sessionId()));
         strategyFor(session).release(session, request);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void confirm(HeldInventory held) {
+        Session session = sessionRepository.findById(held.sessionId())
+                .orElseThrow(() -> new ResourceNotFoundException("Session", held.sessionId()));
+        strategyFor(session).confirm(session, held);
     }
 
     /** Exactly one strategy must claim a session; session creation guarantees the modes don't mix. */

@@ -18,7 +18,7 @@ import org.saket.eventbooking.session.service.SessionInventoryService;
 import org.saket.eventbooking.session.service.SessionService;
 import org.saket.eventbooking.session.service.seating.Hold;
 import org.saket.eventbooking.session.service.seating.HoldRequest;
-import org.saket.eventbooking.session.service.seating.ReleaseRequest;
+import org.saket.eventbooking.session.service.seating.HeldInventory;
 import org.saket.eventbooking.support.IntegrationTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.IllegalTransactionStateException;
@@ -71,7 +71,7 @@ class SessionInventoryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> hold(session.id(), new HoldRequest(null, 3, null)))
                 .isInstanceOf(ConflictException.class).hasMessageContaining("Only 2 tickets left");
 
-        inTx(() -> { inventory.release(new ReleaseRequest(session.id(), null, 3, null)); return null; });
+        inTx(() -> { inventory.release(new HeldInventory(session.id(), null, 3, null)); return null; });
         assertThat(sessionService.get(session.id()).ticketsAvailable()).isEqualTo(5);
     }
 
@@ -87,7 +87,7 @@ class SessionInventoryServiceTest extends IntegrationTest {
         assertThatThrownBy(() -> hold(session.id(), new HoldRequest(vip, 1, null)))
                 .isInstanceOf(ConflictException.class).hasMessageContaining("VIP");
 
-        inTx(() -> { inventory.release(new ReleaseRequest(session.id(), vip, 2, null)); return null; });
+        inTx(() -> { inventory.release(new HeldInventory(session.id(), vip, 2, null)); return null; });
         assertThat(sessionService.get(session.id()).ticketsAvailable()).isEqualTo(12);
     }
 
@@ -111,7 +111,7 @@ class SessionInventoryServiceTest extends IntegrationTest {
                 .isInstanceOf(ConflictException.class);
         assertThat(sessionService.seatMap(session.id()).seats().get(1).status()).isEqualTo(SessionSeatStatus.AVAILABLE);
 
-        inTx(() -> { inventory.release(new ReleaseRequest(session.id(), null, null, List.of(regular, recliner))); return null; });
+        inTx(() -> { inventory.release(new HeldInventory(session.id(), null, null, List.of(regular, recliner))); return null; });
         assertThat(sessionService.get(session.id()).ticketsAvailable()).isEqualTo(6);
     }
 

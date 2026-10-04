@@ -46,6 +46,9 @@ public class Payment {
     @Column(name = "paid_at")
     private Instant paidAt; // nullable until status = SUCCESS
 
+    @Column(name = "created_at", nullable = false)
+    private Instant createdAt; // when this attempt was opened
+
     @Column(name = "failure_reason")
     private String failureReason; // gateway's reason when FAILED, e.g. "Card declined"
 

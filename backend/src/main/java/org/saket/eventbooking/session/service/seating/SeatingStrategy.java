@@ -21,5 +21,12 @@ public interface SeatingStrategy {
      * Puts held inventory back. Callers guarantee it runs at most once per hold (the booking's
      * status transition out of PENDING is the guard), so counters can't be double-incremented.
      */
-    void release(Session session, ReleaseRequest request);
+    void release(Session session, HeldInventory request);
+
+    /**
+     * Makes a paid hold permanent. General admission has nothing to do (the counter was already
+     * decremented at hold time); assigned seating moves its seats LOCKED -> BOOKED.
+     */
+    default void confirm(Session session, HeldInventory held) {
+    }
 }
