@@ -40,7 +40,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 ### Phase 5: Payments
 - [ ] `PaymentGateway` interface with a simulated implementation (deterministic success/failure via a test card or amount rule). Optional Razorpay test-mode implementation behind a profile.
 - [ ] `POST /api/v1/bookings/{id}/payments` with an `Idempotency-Key` header: insert-or-fetch-existing.
-- [ ] Booking/payment state machine with terminal states enforced in one place.
+- [x] Booking/payment state machine with terminal states enforced in one place.
 - [ ] Retry cap, explicit idempotent release on failure.
 - [ ] Webhook endpoint `POST /api/v1/payments/webhook`, idempotent on `transactionId`, signature-checked.
 - [ ] On `CONFIRMED`: generate `bookingReference`, QR (zxing) at `GET /api/v1/bookings/{id}/qr` (PNG), confirmation email via `EmailService` (`@Async`).

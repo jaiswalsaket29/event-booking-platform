@@ -141,3 +141,9 @@ Template:
 - Why this way: it tests the real thing (actual row locks in actual Postgres), not a mock. I checked that it can fail: with the lock removed from the flat strategy (a plain `refresh`), 10 of 20 threads "bought" the single last ticket and 30 of 30 got one of 10 tickets.
 - Alternative considered: unit tests with mocked repositories (trade-off: fast, but they can't observe database locking, which is the thing under test).
 - Interview hook: "I proved the locking works by deleting it and watching the test sell one ticket ten times."
+
+## Booking/payment state machine (2026-10-04)
+- What: the transition tables live on the enums (`BookingStatus.canTransitionTo`, `PaymentStatus.canTransitionTo`) and the only way to change a status is `Booking.transitionTo` / `Payment.transitionTo` (Lombok setter removed with `@Setter(AccessLevel.NONE)`), which throws `IllegalStatusTransitionException` (409, transaction rolls back) for anything else. Booking: new → PENDING → CONFIRMED | FAILED | CANCELLED. Payment: new → PENDING → SUCCESS | FAILED. REFUNDED stays unreachable (refunds are out of scope). V8 adds `bookings.confirmed_at`, `payments.failure_reason`, and a unique index on `payments.transaction_id` for webhook matching.
+- Why this way: a status column that any service can `set` drifts the first time two code paths disagree. Putting the rules next to the data means the webhook handler, the synchronous gateway response, the hold expiry and the retry logic can't move a booking backward, even under races (they still check state first; the guard is the backstop).
+- Alternative considered: Spring Statemachine (trade-off: powerful, but a heavy dependency for two four-state enums).
+- Interview hook: "Terminal states are enforced by the entity itself, not by convention in each service."

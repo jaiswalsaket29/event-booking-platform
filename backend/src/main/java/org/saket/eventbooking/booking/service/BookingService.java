@@ -73,7 +73,7 @@ public class BookingService {
         booking.setUser(user);
         booking.setSession(hold.session());
         booking.setTicketTier(hold.ticketTier());
-        booking.setStatus(BookingStatus.PENDING);
+        booking.transitionTo(BookingStatus.PENDING);
         booking.setQuantity(hold.quantity()); // GA only; assigned seating books specific seats
         booking.setTotalAmount(hold.totalAmount());
         booking.setCreatedAt(Instant.now());

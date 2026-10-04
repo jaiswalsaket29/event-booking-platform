@@ -48,7 +48,7 @@ public class BookingExpiryService {
         Booking booking = locked.get();
         // No payment attempts exist yet (Phase 5). Per design: timeout with no attempt -> CANCELLED;
         // Phase 5 will choose FAILED here when an attempt was made.
-        booking.setStatus(BookingStatus.CANCELLED);
+        booking.transitionTo(BookingStatus.CANCELLED);
 
         List<UUID> seatIds = bookingSeatRepository.findSessionSeatIdsByBookingId(bookingId);
         UUID tierId = booking.getTicketTier() != null ? booking.getTicketTier().getId() : null;

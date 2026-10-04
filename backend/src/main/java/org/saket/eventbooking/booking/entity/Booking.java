@@ -1,11 +1,13 @@
 package org.saket.eventbooking.booking.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.saket.eventbooking.booking.enums.BookingStatus;
+import org.saket.eventbooking.common.exception.IllegalStatusTransitionException;
 import org.saket.eventbooking.session.entity.Session;
 import org.saket.eventbooking.session.entity.TicketTier;
 import org.saket.eventbooking.user.entity.User;
@@ -37,6 +39,7 @@ public class Booking {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE) // only via transitionTo, which enforces the lifecycle
     private BookingStatus status;
 
     private Integer quantity; // GA/tiered bookings only, not assigned seating
@@ -49,4 +52,19 @@ public class Booking {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(name = "confirmed_at")
+    private Instant confirmedAt; // set at PENDING -> CONFIRMED; drives revenue reporting
+
+    /**
+     * The single place a booking's status changes. New bookings start as PENDING; after that only the
+     * moves allowed by {@link BookingStatus#canTransitionTo} are accepted.
+     */
+    public void transitionTo(BookingStatus next) {
+        boolean allowed = status == null ? next == BookingStatus.PENDING : status.canTransitionTo(next);
+        if (!allowed) {
+            throw new IllegalStatusTransitionException("Booking", id, status, next);
+        }
+        this.status = next;
+    }
 }

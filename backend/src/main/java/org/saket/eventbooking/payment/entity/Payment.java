@@ -3,11 +3,13 @@ package org.saket.eventbooking.payment.entity;
 
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.saket.eventbooking.booking.entity.Booking;
+import org.saket.eventbooking.common.exception.IllegalStatusTransitionException;
 import org.saket.eventbooking.payment.enums.PaymentStatus;
 
 import java.math.BigDecimal;
@@ -32,6 +34,7 @@ public class Payment {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Setter(AccessLevel.NONE) // only via transitionTo, which enforces the lifecycle
     private PaymentStatus status;
 
     @Column(name = "transaction_id")
@@ -42,4 +45,16 @@ public class Payment {
 
     @Column(name = "paid_at")
     private Instant paidAt; // nullable until status = SUCCESS
+
+    @Column(name = "failure_reason")
+    private String failureReason; // gateway's reason when FAILED, e.g. "Card declined"
+
+    /** The single place a payment's status changes: null -> PENDING, then PENDING -> SUCCESS | FAILED. */
+    public void transitionTo(PaymentStatus next) {
+        boolean allowed = status == null ? next == PaymentStatus.PENDING : status.canTransitionTo(next);
+        if (!allowed) {
+            throw new IllegalStatusTransitionException("Payment", id, status, next);
+        }
+        this.status = next;
+    }
 }

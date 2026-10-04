@@ -115,7 +115,8 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.NOT_FOUND, ex.getMessage(), request);
     }
 
-    @ExceptionHandler({EmailAlreadyExistsException.class, ConflictException.class})
+    @ExceptionHandler({EmailAlreadyExistsException.class, ConflictException.class,
+            IllegalStatusTransitionException.class})
     public ResponseEntity<ApiError> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
     }
