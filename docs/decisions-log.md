@@ -65,3 +65,9 @@ Template:
 - Alternative considered: a one-time code in the redirect, exchanged for tokens via POST (trade-off: tokens never touch the URL at all, but needs a short-lived code store; fragments already stay out of server logs and Referer headers, so it's a later hardening step).
 - Interview hook: "Google proves identity, but my server still issues the session; and I only auto-link accounts when Google vouches for the email."
 - Not verified end to end with real Google credentials; covered by service tests for the linking rules and a wiring test that the authorization endpoint redirects to Google when enabled.
+
+## Locations, halls and bulk seat layout (2026-10-04)
+- What: repositories/services/DTOs for `Location`, `Hall`, `Seat`; admin CRUD under `/api/v1/admin/locations` and `/api/v1/admin/halls`; `PUT /admin/halls/{id}/seats` replaces a hall's layout from blocks of `rows x seatsPerRow x seatType` with row labels continuing across blocks (A..Z, AA, AB...). Public `GET /api/v1/locations`, `/locations/cities`, `/locations/{id}`.
+- Why this way: hall capacity is derived from the layout instead of typed in, so the two can't disagree. A layout can only be replaced while no session uses the hall: seats are shared reference data and `session_seats` point at them, so the FK refuses it and the service turns that into a 409 with a clear message. Deleting a location or hall that's still referenced is also a 409, not a 500.
+- Alternative considered: an explicit "does any session use this hall?" check (trade-off: nicer, but the location domain would have to call the session domain, which already calls the location domain; letting the database enforce it avoids the cycle).
+- Interview hook: "Admins describe a venue in three numbers per block and the API generates hundreds of seats; once tickets exist for a hall, the database won't let its seats change."
