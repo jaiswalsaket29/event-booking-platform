@@ -147,3 +147,10 @@ Template:
 - Why this way: a status column that any service can `set` drifts the first time two code paths disagree. Putting the rules next to the data means the webhook handler, the synchronous gateway response, the hold expiry and the retry logic can't move a booking backward, even under races (they still check state first; the guard is the backstop).
 - Alternative considered: Spring Statemachine (trade-off: powerful, but a heavy dependency for two four-state enums).
 - Interview hook: "Terminal states are enforced by the entity itself, not by convention in each service."
+
+## Payment gateway abstraction (2026-10-04)
+- What: `PaymentGateway.charge(ChargeRequest) → ChargeResult(transactionId, SUCCEEDED | FAILED | PROCESSING, failureReason)`. `SimulatedPaymentGateway` (default bean via `@ConditionalOnMissingBean`) decides by payment-method token: `tok_success`, `tok_decline` ("Card declined"), `tok_insufficient_funds`, anything else fails. It de-duplicates by idempotency key like a real provider. Settings live in `app.payments.*` (`max-attempts` 3, `currency` INR, `webhook-secret`, `simulated.mode` WEBHOOK|SYNC, `simulated.webhook-delay`).
+- Why this way: the app runs locally and in the demo with no provider account, outcomes are deterministic for tests, and the API takes a provider token instead of card numbers, which is how real integrations keep card data out of your servers (PCI scope).
+- Not done: the optional Razorpay test-mode gateway. Razorpay's flow is "create order server-side, pay in their client widget, verify a signature", which needs real test credentials to verify end to end. The interface leaves room for it (another `PaymentGateway` bean behind a profile).
+- Alternative considered: deciding the outcome by amount (e.g. amounts ending in .13 fail) (trade-off: no extra field, but amounts come from seat prices, so tests couldn't choose the outcome).
+- Interview hook: "Payments go through an interface with a deterministic simulator, the same way you'd use a provider's test cards."

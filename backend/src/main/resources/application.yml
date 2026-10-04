@@ -53,6 +53,16 @@ app:
       enabled: true
       interval: 60s
     configure-keyspace-notifications: true
+  payments:
+    max-attempts: 3
+    currency: INR
+    # HMAC-SHA256 key for POST /api/v1/payments/webhook. The default is for local dev only;
+    # always set PAYMENT_WEBHOOK_SECRET in any shared environment.
+    webhook-secret: ${PAYMENT_WEBHOOK_SECRET:dev-only-webhook-secret-change-me}
+    simulated:
+      # WEBHOOK: outcome arrives as a signed webhook (realistic). SYNC: charges finish immediately.
+      mode: ${PAYMENT_SIMULATED_MODE:WEBHOOK}
+      webhook-delay: 1500ms
   seed:
     # Seed the demo catalog on startup when the database has no events (DemoDataSeeder).
     demo-data: ${SEED_DEMO_DATA:true}
