@@ -7,6 +7,7 @@ import org.saket.eventbooking.auth.exception.EmailAlreadyExistsException;
 import org.saket.eventbooking.auth.exception.InvalidCredentialsException;
 import org.saket.eventbooking.auth.exception.InvalidRefreshTokenException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -74,6 +75,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, "Invalid value for parameter '" + ex.getName() + "'", request);
+    }
+
+    /** e.g. {@code ?sort=nonexistentField} on a paged endpoint. */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ApiError> handleBadSortProperty(PropertyReferenceException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Unknown property '" + ex.getPropertyName() + "'", request);
     }
 
     @ExceptionHandler({MissingServletRequestParameterException.class, MissingRequestHeaderException.class,
