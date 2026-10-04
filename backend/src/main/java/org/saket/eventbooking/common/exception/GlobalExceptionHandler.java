@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.saket.eventbooking.auth.exception.EmailAlreadyExistsException;
 import org.saket.eventbooking.auth.exception.InvalidCredentialsException;
 import org.saket.eventbooking.auth.exception.InvalidRefreshTokenException;
+import org.saket.eventbooking.payment.webhook.InvalidWebhookSignatureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
@@ -89,7 +90,8 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request);
     }
 
-    @ExceptionHandler({InvalidCredentialsException.class, InvalidRefreshTokenException.class})
+    @ExceptionHandler({InvalidCredentialsException.class, InvalidRefreshTokenException.class,
+            InvalidWebhookSignatureException.class})
     public ResponseEntity<ApiError> handleUnauthorized(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request);
     }

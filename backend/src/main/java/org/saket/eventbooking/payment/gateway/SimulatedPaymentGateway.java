@@ -17,6 +17,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * </ul>
  * Like a real provider it honours idempotency keys: retrying a charge with the same key returns the
  * original result instead of charging twice.
+ * <p>
+ * In {@code WEBHOOK} mode (the default) a charge answers PROCESSING and the outcome arrives later as a
+ * signed webhook, so the app runs on "the webhook is the source of truth". {@code SYNC} answers
+ * immediately (used by most tests).
  */
 @Slf4j
 public class SimulatedPaymentGateway implements PaymentGateway {
@@ -26,14 +30,29 @@ public class SimulatedPaymentGateway implements PaymentGateway {
     public static final String TOKEN_INSUFFICIENT_FUNDS = "tok_insufficient_funds";
 
     private final Map<String, ChargeResult> chargesByIdempotencyKey = new ConcurrentHashMap<>();
+    private final SimulatedWebhookSender webhookSender; // null = SYNC mode
+
+    /** SYNC mode: outcomes are returned directly. */
+    public SimulatedPaymentGateway() {
+        this(null);
+    }
+
+    /** WEBHOOK mode when {@code webhookSender} is given. */
+    public SimulatedPaymentGateway(SimulatedWebhookSender webhookSender) {
+        this.webhookSender = webhookSender;
+    }
 
     @Override
     public ChargeResult charge(ChargeRequest request) {
         return chargesByIdempotencyKey.computeIfAbsent(request.idempotencyKey(), key -> {
-            ChargeResult result = decide(request.paymentMethodToken());
-            log.info("Simulated charge {} for payment {}: {} {} -> {}", result.transactionId(), request.paymentId(),
-                    request.amount(), request.currency(), result.status());
-            return result;
+            ChargeResult outcome = decide(request.paymentMethodToken());
+            log.info("Simulated charge {} for payment {}: {} {} -> {}{}", outcome.transactionId(), request.paymentId(),
+                    request.amount(), request.currency(), outcome.status(), webhookSender != null ? " (via webhook)" : "");
+            if (webhookSender == null) {
+                return outcome;
+            }
+            webhookSender.deliverLater(request, outcome);
+            return new ChargeResult(outcome.transactionId(), ChargeResult.Status.PROCESSING, null);
         });
     }
 
