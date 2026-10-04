@@ -12,7 +12,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 ## Remaining: backend
 
 ### Phase 2c: Auth completion
-- [ ] Global `@RestControllerAdvice` in `common/exception`: consistent JSON error body (`timestamp`, `status`, `error`, `message`, `path`, field errors for validation). Map `EmailAlreadyExistsException` → 409, `InvalidCredentialsException` / bad refresh token → 401, `AccessDeniedException` → 403, not-found → 404. Return JSON 401/403 from the security chain too (custom `AuthenticationEntryPoint` / `AccessDeniedHandler`). Replace the `IllegalArgumentException`s in `RefreshTokenService` with a proper exception.
+- [x] Global `@RestControllerAdvice` in `common/exception`: consistent JSON error body (`timestamp`, `status`, `error`, `message`, `path`, field errors for validation). Map `EmailAlreadyExistsException` → 409, `InvalidCredentialsException` / bad refresh token → 401, `AccessDeniedException` → 403, not-found → 404. Return JSON 401/403 from the security chain too (custom `AuthenticationEntryPoint` / `AccessDeniedHandler`). Replace the `IllegalArgumentException`s in `RefreshTokenService` with a proper exception.
 - [ ] Seed one admin account via a Flyway migration (BCrypt hash of a dev password; document the credentials in the README as dev-only).
 - [ ] `GET /api/v1/users/me`.
 - [ ] Email verification: issue `EmailVerificationToken` on signup, `POST /api/v1/auth/verify-email`, `POST /api/v1/auth/resend-verification`. Email sending goes behind an `EmailService` interface; the dev implementation logs the link.

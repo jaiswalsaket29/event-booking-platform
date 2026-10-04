@@ -1,0 +1,7 @@
+# Test profile: datasource comes from Testcontainers (@ServiceConnection), so nothing here needs
+# the docker-compose database or a backend/.env file.
+jwt:
+  secret: test-secret-key-that-is-at-least-32-bytes-long-for-hs256
+spring:
+  jpa:
+    show-sql: false

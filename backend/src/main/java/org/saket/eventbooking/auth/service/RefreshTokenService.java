@@ -2,6 +2,7 @@ package org.saket.eventbooking.auth.service;
 
 import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.auth.entity.RefreshToken;
+import org.saket.eventbooking.auth.exception.InvalidRefreshTokenException;
 import org.saket.eventbooking.auth.repository.RefreshTokenRepository;
 import org.saket.eventbooking.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,15 +47,15 @@ public class RefreshTokenService {
      */
     public User validateAndRevoke(String rawToken) {
         RefreshToken entity = refreshTokenRepository.findByTokenHash(hash(rawToken))
-                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+                .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if (Boolean.TRUE.equals(entity.getRevoked())) {
             // Replay of an already-used/revoked token — a real theft-detection response
             // (revoke the whole family) is future scope; flag-and-reject is enough for now.
-            throw new IllegalArgumentException("Refresh token has already been used or revoked");
+            throw new InvalidRefreshTokenException("Refresh token has already been used or revoked");
         }
         if (entity.getExpiresAt().isBefore(Instant.now())) {
-            throw new IllegalArgumentException("Refresh token has expired");
+            throw new InvalidRefreshTokenException("Refresh token has expired");
         }
 
         entity.setRevoked(true);

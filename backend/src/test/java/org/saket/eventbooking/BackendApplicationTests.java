@@ -1,10 +1,9 @@
 package org.saket.eventbooking;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.saket.eventbooking.support.IntegrationTest;
 
-@SpringBootTest
-class BackendApplicationTests {
+class BackendApplicationTests extends IntegrationTest {
 
     @Test
     void contextLoads() {

@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -25,13 +26,14 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
 
     public UserResponse signup(SignupRequest request) {
-        if (userService.existsByEmail(request.email())) {
-            throw new EmailAlreadyExistsException(request.email());
+        String email = normalizeEmail(request.email());
+        if (userService.existsByEmail(email)) {
+            throw new EmailAlreadyExistsException(email);
         }
 
         User user = new User();
-        user.setName(request.name());
-        user.setEmail(request.email());
+        user.setName(request.name().trim());
+        user.setEmail(email);
         user.setPasswordHash(passwordEncoder.encode(request.password())); // never store plaintext
         user.setRole(Role.USER); // hardcoded server-side — payload can never grant ADMIN
         user.setAuthProvider(AuthProvider.LOCAL);
@@ -46,7 +48,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
 
     public AuthResponse login(LoginRequest request) {
-        User user = userService.findByEmail(request.email())
+        User user = userService.findByEmail(normalizeEmail(request.email()))
                 .orElseThrow(InvalidCredentialsException::new);
 
         // OAuth-only users have a null passwordHash — matches() would NPE, so guard explicitly.
@@ -59,6 +61,10 @@ public class AuthService {
         String refreshToken = refreshTokenService.issue(user);
 
         return new AuthResponse(token,refreshToken, toResponse(user));
+    }
+
+    private static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private UserResponse toResponse(User user) {
