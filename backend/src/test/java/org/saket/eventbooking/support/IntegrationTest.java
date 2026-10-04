@@ -34,6 +34,9 @@ public abstract class IntegrationTest {
     @Autowired
     protected JwtTokenProvider jwtTokenProvider;
 
+    @Autowired
+    protected RecordingEmailService emailService;
+
     protected static String uniqueEmail() {
         return "user-" + UUID.randomUUID() + "@test.dev";
     }

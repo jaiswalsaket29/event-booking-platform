@@ -21,5 +21,11 @@ jwt:
 app:
   jwt:
     refresh-token-expiry-days: 30
+  auth:
+    email-verification-token-ttl: 24h
+    password-reset-token-ttl: 30m
+  frontend:
+    # Base URL of the user-facing frontend; used to build links in emails.
+    user-url: ${FRONTEND_USER_URL:http://localhost:5173}
 server:
   port: 8080

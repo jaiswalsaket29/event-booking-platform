@@ -38,3 +38,10 @@ Template:
 - Why this way: the frontends need fresh profile state (especially `emailVerified`, which can change after the access token was issued), so it's read from the DB, not the token claims. A deleted user with a still-valid token gets 404.
 - Alternative considered: decoding claims client-side only (trade-off: no round trip, but stale after verification or role changes).
 - Interview hook: "The token says who you are; the database says what you look like now."
+
+## Email verification (2026-10-04)
+- What: signup issues an `EmailVerificationToken` (32 random bytes, stored as a SHA-256 hash, 24h TTL) and emails a `FRONTEND_USER_URL/verify-email?token=...` link. `POST /auth/verify-email` consumes it (single use); `POST /auth/resend-verification` invalidates outstanding tokens and sends a fresh one. Email goes through an `EmailService` interface; the default `LoggingEmailService` just logs (`@ConditionalOnMissingBean`, so an SMTP bean can replace it).
+- Why this way: hashing one-time tokens costs nothing and means a DB read can't verify accounts. Resend always returns the same 200 message so it can't be used to check which emails are registered. Login still works unverified (per design); booking will enforce it.
+- Alternative considered: a signed JWT verification link with no DB row (trade-off: stateless, but can't be made single-use or revoked on resend).
+- Interview hook: "Every one-time token is random, hashed at rest, single-use, and short-lived; resend invalidates the old one."
+- Note: the access token's `emailVerified` claim is stale until the next `/auth/refresh`; `/users/me` reads the live value.

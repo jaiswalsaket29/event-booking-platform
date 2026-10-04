@@ -11,12 +11,13 @@ import org.saket.eventbooking.user.dto.UserResponse;
 import org.saket.eventbooking.user.entity.User;
 import org.saket.eventbooking.user.enums.AuthProvider;
 import org.saket.eventbooking.user.enums.Role;
+import org.saket.eventbooking.user.service.EmailVerificationService;
 import org.saket.eventbooking.user.service.UserService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.Locale;
 
 @Service
 @RequiredArgsConstructor
@@ -24,9 +25,11 @@ public class AuthService {
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailVerificationService emailVerificationService;
 
+    @Transactional
     public UserResponse signup(SignupRequest request) {
-        String email = normalizeEmail(request.email());
+        String email = UserService.normalizeEmail(request.email());
         if (userService.existsByEmail(email)) {
             throw new EmailAlreadyExistsException(email);
         }
@@ -41,6 +44,7 @@ public class AuthService {
         user.setCreatedAt(Instant.now());
 
         User saved = userService.save(user);
+        emailVerificationService.issue(saved);
         return toResponse(saved);
     }
 
@@ -48,7 +52,7 @@ public class AuthService {
     private final RefreshTokenService refreshTokenService;
 
     public AuthResponse login(LoginRequest request) {
-        User user = userService.findByEmail(normalizeEmail(request.email()))
+        User user = userService.findByEmail(UserService.normalizeEmail(request.email()))
                 .orElseThrow(InvalidCredentialsException::new);
 
         // OAuth-only users have a null passwordHash — matches() would NPE, so guard explicitly.
@@ -61,10 +65,6 @@ public class AuthService {
         String refreshToken = refreshTokenService.issue(user);
 
         return new AuthResponse(token,refreshToken, toResponse(user));
-    }
-
-    private static String normalizeEmail(String email) {
-        return email.trim().toLowerCase(Locale.ROOT);
     }
 
     private UserResponse toResponse(User user) {

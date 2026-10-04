@@ -7,6 +7,7 @@ import org.saket.eventbooking.user.repository.UserRepository;
 import org.saket.eventbooking.user.entity.User;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +15,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
+
+    /** Emails are case-insensitive identifiers; store and look them up in one canonical form. */
+    public static String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
+    }
 
     public Optional<User> findByEmail(String email) {
         return userRepository.findByEmail(email);

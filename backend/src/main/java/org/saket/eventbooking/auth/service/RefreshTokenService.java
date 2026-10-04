@@ -4,16 +4,13 @@ import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.auth.entity.RefreshToken;
 import org.saket.eventbooking.auth.exception.InvalidRefreshTokenException;
 import org.saket.eventbooking.auth.repository.RefreshTokenRepository;
+import org.saket.eventbooking.common.security.SecureTokens;
 import org.saket.eventbooking.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Base64;
 
 @Service
 @RequiredArgsConstructor
@@ -23,8 +20,6 @@ public class RefreshTokenService {
 
     @Value("${app.jwt.refresh-token-expiry-days:30}")
     private int refreshTokenExpiryDays;
-
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     /** Issues a new refresh token for the user, returning the RAW token (only ever seen once — not the hash). */
     public String issue(User user) {
@@ -76,18 +71,10 @@ public class RefreshTokenService {
     }
 
     private String generateRawToken() {
-        byte[] bytes = new byte[64];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        return SecureTokens.generate(64);
     }
 
     private String hash(String rawToken) {
-        try {
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            byte[] hashed = digest.digest(rawToken.getBytes());
-            return Base64.getEncoder().encodeToString(hashed);
-        } catch (NoSuchAlgorithmException e) {
-            throw new IllegalStateException("SHA-256 not available", e);
-        }
+        return SecureTokens.sha256(rawToken);
     }
 }
