@@ -38,6 +38,9 @@ app:
       REGULAR: 1.0
       PREMIUM: 1.5
       RECLINER: 2.0
+  seed:
+    # Seed the demo catalog on startup when the database has no events (DemoDataSeeder).
+    demo-data: ${SEED_DEMO_DATA:true}
   cors:
     # Comma-separated allowlist: frontend-user (5173) and frontend-admin (5174) in dev.
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:5174}

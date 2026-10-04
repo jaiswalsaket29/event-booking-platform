@@ -27,7 +27,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] Session creation validates seating/pricing mode (see `design-decisions.md`), generates `SessionSeat` rows for assigned seating with the price snapshot from a seat-type pricing table (multipliers on `basePrice` are fine: REGULAR 1.0, PREMIUM 1.5, RECLINER 2.0, kept in config).
 - [x] Public read endpoints: event list (paged, sortable by date, filter by city/category/date range, published only), event detail with artists + images + upcoming sessions, sessions for an event, seat map for a session (status + price per seat), locations, artists, artist page.
 - [x] Contact form `POST /api/v1/contact` (public) + admin list/resolve.
-- [ ] Dev seed data (Flyway `R__` repeatable migration or a `dev`-profile `CommandLineRunner`): a few cities, venues, halls with seat layouts, artists, ~10 published events with sessions across all three seating modes. Use real-looking but fictional names.
+- [x] Dev seed data (Flyway `R__` repeatable migration or a `dev`-profile `CommandLineRunner`): a few cities, venues, halls with seat layouts, artists, ~10 published events with sessions across all three seating modes. Use real-looking but fictional names.
 - [ ] Integration tests (Testcontainers + MockMvc) for the main endpoints and the admin authorization gate.
 
 ### Phase 4: Booking and concurrency

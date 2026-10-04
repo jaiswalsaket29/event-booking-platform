@@ -5,3 +5,6 @@ jwt:
 spring:
   jpa:
     show-sql: false
+app:
+  seed:
+    demo-data: false
