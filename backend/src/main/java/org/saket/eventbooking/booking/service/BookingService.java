@@ -2,6 +2,9 @@ package org.saket.eventbooking.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.booking.config.BookingProperties;
+import jakarta.persistence.criteria.Predicate;
+import org.saket.eventbooking.booking.dto.AdminBookingFilter;
+import org.saket.eventbooking.booking.dto.AdminBookingResponse;
 import org.saket.eventbooking.booking.dto.BookingResponse;
 import org.saket.eventbooking.booking.dto.CreateBookingRequest;
 import org.saket.eventbooking.booking.entity.Booking;
@@ -15,6 +18,8 @@ import org.saket.eventbooking.common.exception.BadRequestException;
 import org.saket.eventbooking.common.exception.ForbiddenException;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
 import org.saket.eventbooking.location.service.HallService;
+import org.saket.eventbooking.payment.dto.PaymentResponse;
+import org.saket.eventbooking.payment.service.PaymentQueryService;
 import org.saket.eventbooking.session.entity.Session;
 import org.saket.eventbooking.session.entity.SessionSeat;
 import org.saket.eventbooking.session.entity.TicketTier;
@@ -25,12 +30,15 @@ import org.saket.eventbooking.user.entity.User;
 import org.saket.eventbooking.user.service.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -45,6 +53,7 @@ public class BookingService {
     private final UserService userService;
     private final BookingHoldStore holdStore;
     private final BookingProperties properties;
+    private final PaymentQueryService paymentQueryService;
 
     /**
      * Starts a checkout: holds the inventory under row locks, records a PENDING booking, and starts the
@@ -106,6 +115,65 @@ public class BookingService {
         Booking booking = bookingRepository.findByIdAndUserId(bookingId, userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
         return toResponses(List.of(booking)).getFirst();
+    }
+
+    /** Admin search across all users; newest first by default. */
+    @Transactional(readOnly = true)
+    public PageResponse<AdminBookingResponse> adminSearch(AdminBookingFilter filter, Pageable pageable) {
+        Specification<Booking> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            if (filter.status() != null) {
+                predicates.add(cb.equal(root.get("status"), filter.status()));
+            }
+            if (filter.sessionId() != null) {
+                predicates.add(cb.equal(root.get("session").get("id"), filter.sessionId()));
+            }
+            if (filter.eventId() != null) {
+                predicates.add(cb.equal(root.get("session").get("event").get("id"), filter.eventId()));
+            }
+            if (filter.from() != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("createdAt"), filter.from()));
+            }
+            if (filter.to() != null) {
+                predicates.add(cb.lessThan(root.get("createdAt"), filter.to()));
+            }
+            if (filter.q() != null && !filter.q().isBlank()) {
+                String q = filter.q().trim();
+                predicates.add(q.toUpperCase(Locale.ROOT).startsWith("EVT-")
+                        ? cb.equal(root.get("bookingReference"), q.toUpperCase(Locale.ROOT))
+                        : cb.like(cb.lower(root.get("user").get("email")),
+                        "%" + escapeLike(q.toLowerCase(Locale.ROOT)) + "%", '\\'));
+            }
+            return cb.and(predicates.toArray(Predicate[]::new));
+        };
+        Page<Booking> page = bookingRepository.findAll(spec, pageable);
+        List<AdminBookingResponse> content = toAdminResponses(page.getContent());
+        return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
+    }
+
+    @Transactional(readOnly = true)
+    public AdminBookingResponse adminGet(UUID bookingId) {
+        Booking booking = bookingRepository.findWithDetailsById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
+        return toAdminResponses(List.of(booking)).getFirst();
+    }
+
+    private static String escapeLike(String value) {
+        return value.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    private List<AdminBookingResponse> toAdminResponses(List<Booking> bookings) {
+        List<BookingResponse> responses = toResponses(bookings);
+        Map<UUID, List<PaymentResponse>> payments = paymentQueryService.listForBookings(
+                bookings.stream().map(Booking::getId).toList());
+        List<AdminBookingResponse> result = new ArrayList<>(bookings.size());
+        for (int i = 0; i < bookings.size(); i++) {
+            User user = bookings.get(i).getUser();
+            result.add(new AdminBookingResponse(responses.get(i),
+                    new AdminBookingResponse.Customer(user.getId(), user.getName(), user.getEmail()),
+                    payments.getOrDefault(bookings.get(i).getId(), List.of())));
+        }
+        return result;
     }
 
     /** Maps bookings with one batched query for their seats. Must run inside a transaction. */

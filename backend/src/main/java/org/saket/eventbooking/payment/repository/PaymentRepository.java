@@ -29,4 +29,12 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     Optional<UUID> findIdByTransactionId(@Param("transactionId") String transactionId);
 
     List<Payment> findByBookingIdIn(Collection<UUID> bookingIds);
+
+    /** Successful charges whose booking never got confirmed (hold expired first): refunds owed. */
+    @Query("""
+            select count(p) from Payment p
+            where p.status = org.saket.eventbooking.payment.enums.PaymentStatus.SUCCESS
+              and p.booking.status <> org.saket.eventbooking.booking.enums.BookingStatus.CONFIRMED
+            """)
+    long countLatePayments();
 }

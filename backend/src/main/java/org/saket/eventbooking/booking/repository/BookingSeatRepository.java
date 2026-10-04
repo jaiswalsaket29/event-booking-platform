@@ -19,6 +19,10 @@ public interface BookingSeatRepository extends JpaRepository<BookingSeat, UUID> 
             """)
     List<BookingSeat> findByBookingIdsWithSeats(@Param("bookingIds") Collection<UUID> bookingIds);
 
+    /** Rows of [bookingId, seatCount]. */
+    @Query("select bs.booking.id, count(bs) from BookingSeat bs where bs.booking.id in :bookingIds group by bs.booking.id")
+    List<Object[]> countByBookingIds(@Param("bookingIds") Collection<UUID> bookingIds);
+
     @Query("select bs.sessionSeat.id from BookingSeat bs where bs.booking.id = :bookingId")
     List<UUID> findSessionSeatIdsByBookingId(@Param("bookingId") UUID bookingId);
 }

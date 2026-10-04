@@ -6,7 +6,9 @@ import org.saket.eventbooking.booking.enums.BookingStatus;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -16,7 +18,21 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface BookingRepository extends JpaRepository<Booking, UUID> {
+public interface BookingRepository extends JpaRepository<Booking, UUID>, JpaSpecificationExecutor<Booking> {
+
+    /** Admin search; the graph loads what the list shows in the same query. */
+    @Override
+    @EntityGraph(attributePaths = {"user", "session", "session.event", "session.location", "session.hall", "ticketTier"})
+    Page<Booking> findAll(Specification<Booking> spec, Pageable pageable);
+
+    /** Rows of [bookingId, confirmedAt, totalAmount, quantity, eventId, eventTitle] for reporting. */
+    @Query("""
+            select b.id, b.confirmedAt, b.totalAmount, b.quantity, e.id, e.title
+            from Booking b join b.session s join s.event e
+            where b.status = org.saket.eventbooking.booking.enums.BookingStatus.CONFIRMED
+              and b.confirmedAt >= :from and b.confirmedAt < :to
+            """)
+    List<Object[]> findConfirmedBetween(@Param("from") Instant from, @Param("to") Instant to);
 
     @EntityGraph(attributePaths = {"session", "session.event", "session.location", "session.hall", "ticketTier"})
     Page<Booking> findByUserId(UUID userId, Pageable pageable);

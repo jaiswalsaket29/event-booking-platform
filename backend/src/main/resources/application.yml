@@ -63,6 +63,9 @@ app:
       # WEBHOOK: outcome arrives as a signed webhook (realistic). SYNC: charges finish immediately.
       mode: ${PAYMENT_SIMULATED_MODE:WEBHOOK}
       webhook-delay: 1500ms
+  reporting:
+    # Business time zone: dashboard "days" are calendar days here.
+    zone: Asia/Kolkata
   seed:
     # Seed the demo catalog on startup when the database has no events (DemoDataSeeder).
     demo-data: ${SEED_DEMO_DATA:true}

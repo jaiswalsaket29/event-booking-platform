@@ -46,6 +46,12 @@ public class PaymentQueryService {
         return Optional.of(PaymentResponse.from(payment.get()));
     }
 
+    /** Money taken for bookings that ended unpaid (needs a manual refund; refunds are out of scope). */
+    @Transactional(readOnly = true)
+    public long countLatePayments() {
+        return paymentRepository.countLatePayments();
+    }
+
     @Transactional(readOnly = true)
     public PaymentResponse get(UUID paymentId) {
         return PaymentResponse.from(paymentRepository.findById(paymentId).orElseThrow());
