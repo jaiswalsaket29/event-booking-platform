@@ -48,7 +48,8 @@ public class SecurityConfig {
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // public catalog reads
-                        .requestMatchers(HttpMethod.GET, "/api/v1/locations/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/locations/**", "/api/v1/events/**",
+                                "/api/v1/sessions/**", "/api/v1/artists/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex

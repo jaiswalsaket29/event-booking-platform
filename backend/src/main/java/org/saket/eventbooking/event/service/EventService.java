@@ -11,6 +11,8 @@ import org.saket.eventbooking.event.dto.EventDetailResponse;
 import org.saket.eventbooking.event.dto.EventImageRequest;
 import org.saket.eventbooking.event.dto.EventRequest;
 import org.saket.eventbooking.event.dto.EventResponse;
+import org.saket.eventbooking.event.dto.EventSearchCriteria;
+import org.saket.eventbooking.event.dto.EventSummaryResponse;
 import org.saket.eventbooking.event.entity.Event;
 import org.saket.eventbooking.event.entity.EventArtist;
 import org.saket.eventbooking.event.entity.EventImage;
@@ -18,18 +20,24 @@ import org.saket.eventbooking.event.enums.EventStatus;
 import org.saket.eventbooking.event.repository.EventArtistRepository;
 import org.saket.eventbooking.event.repository.EventImageRepository;
 import org.saket.eventbooking.event.repository.EventRepository;
+import org.saket.eventbooking.event.repository.EventSearchRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +47,28 @@ public class EventService {
     private final EventArtistRepository eventArtistRepository;
     private final EventImageRepository eventImageRepository;
     private final ArtistService artistService;
+    private final EventSearchRepository eventSearchRepository;
+
+    /** Public listing: published events with an upcoming scheduled session matching the filters. */
+    @Transactional(readOnly = true)
+    public PageResponse<EventSummaryResponse> searchPublished(EventSearchCriteria criteria, Pageable pageable) {
+        if (criteria.from() != null && criteria.to() != null && !criteria.to().isAfter(criteria.from())) {
+            throw new BadRequestException("'to' must be after 'from'");
+        }
+        Page<EventSearchRepository.Row> rows = eventSearchRepository.search(criteria, Instant.now(), pageable);
+        Map<UUID, Event> events = eventRepository.findAllById(rows.map(EventSearchRepository.Row::eventId).toList())
+                .stream().collect(Collectors.toMap(Event::getId, Function.identity()));
+        return PageResponse.of(rows, row -> {
+            Event e = events.get(row.eventId());
+            return new EventSummaryResponse(e.getId(), e.getTitle(), e.getCategory(), e.getImageUrl(), e.getLanguage(),
+                    e.getDurationMinutes(), e.getAgeRestriction(), e.isFeatured(), row.nextSessionStart(), row.startingPrice());
+        });
+    }
+
+    @Transactional(readOnly = true)
+    public List<String> listPublishedCategories() {
+        return eventRepository.findDistinctCategories(EventStatus.PUBLISHED);
+    }
 
     /** Admin listing: every status, optional status filter and title search. */
     @Transactional(readOnly = true)

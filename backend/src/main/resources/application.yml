@@ -16,6 +16,10 @@ spring:
         jdbc:
           batch_size: 50
         order_inserts: true
+  data:
+    web:
+      pageable:
+        max-page-size: 100
   flyway:
     enabled: true
     locations: classpath:db/migration

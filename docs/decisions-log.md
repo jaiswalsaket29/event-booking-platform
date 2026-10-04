@@ -84,3 +84,10 @@ Template:
 - Alternative considered: computing seat prices at booking time from the current multipliers (trade-off: no snapshot rows to maintain, but a price change would silently reprice a show people are already browsing).
 - Interview hook: "The three seating modes are mutually exclusive by validation at creation time, so the booking strategy can trust the shape of the data."
 - Known gap: cancelling a session or event only flips its status; cascading to bookings belongs to the booking phase.
+
+## Public catalog endpoints (2026-10-04)
+- What: anonymous `GET` endpoints: `/api/v1/events` (paged; filters `city`, `category`, `from`/`to` instants, `q`, `featured`, `artistId`; `sort=DATE|TITLE`), `/events/categories`, `/events/{id}` (details + line-up + gallery + upcoming sessions), `/events/{id}/sessions`, `/sessions/{id}`, `/sessions/{id}/seats` (status + price per seat), `/artists`, `/artists/{id}` (profile + upcoming events), plus the location reads from earlier.
+- Why this way: an event is listed only if it's PUBLISHED and has a SCHEDULED session that matches the filters, and it's ordered by that session's start, because date and city live on `Session`, not `Event`. `EventSearchRepository` therefore queries sessions grouped by event with the Criteria API (every filter a bound parameter), then loads the page's events in one query. `nextSessionStart` and `startingPrice` come from the same aggregate. Unpublished events and their sessions return 404, not 403, so drafts don't leak.
+- Alternative considered: a denormalised `next_session_start` column on `events` (trade-off: simpler and faster queries, but it needs keeping in sync on every session change and still can't honour a date-range or city filter).
+- Interview hook: "The listing is a GROUP BY over sessions, so 'events in Pune next weekend, soonest first' is one SQL query plus one id lookup."
+- Note: the event search queries the `Session` entity from the event domain's repository. That's a read-only query, not a call into the session domain's repository, so I kept it there rather than move event listing into the session package.
