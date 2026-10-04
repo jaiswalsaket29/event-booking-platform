@@ -51,3 +51,9 @@ Template:
 - Why this way: identical responses prevent account enumeration. Revoking every refresh token means a reset actually evicts an attacker who had a session. Following an emailed link proves ownership of the address, so marking it verified is safe.
 - Alternative considered: emailing a temporary password (trade-off: simpler, but the secret sits in an inbox and stays valid; never acceptable).
 - Interview hook: "A password reset signs you out everywhere: the reset bulk-revokes refresh tokens in the same transaction."
+
+## CORS allowlist (2026-10-04)
+- What: a `CorsConfigurationSource` for `/api/**` allowing exactly the origins in `app.cors.allowed-origins` (default `http://localhost:5173,http://localhost:5174`, overridable with `CORS_ALLOWED_ORIGINS`), wired into the security chain with `http.cors()`.
+- Why this way: putting CORS inside Spring Security means preflight `OPTIONS` requests are answered before authentication, so protected routes don't 401 their own preflights. No credentials mode, because tokens travel in headers rather than cookies.
+- Alternative considered: `@CrossOrigin` per controller or a `WebMvcConfigurer` mapping (trade-off: runs after the security filters, so preflights to protected routes get rejected).
+- Interview hook: "CORS lives in the security filter chain with an explicit allowlist from env, never `*`."

@@ -17,7 +17,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] `GET /api/v1/users/me`.
 - [x] Email verification: issue `EmailVerificationToken` on signup, `POST /api/v1/auth/verify-email`, `POST /api/v1/auth/resend-verification`. Email sending goes behind an `EmailService` interface; the dev implementation logs the link.
 - [x] Password reset: `POST /api/v1/auth/forgot-password` (always 200, no account enumeration), `POST /api/v1/auth/reset-password`. Revoke all refresh tokens on reset.
-- [ ] CORS allowlist for `http://localhost:5173` and `http://localhost:5174` (configurable via env for prod).
+- [x] CORS allowlist for `http://localhost:5173` and `http://localhost:5174` (configurable via env for prod).
 - [ ] Delete `common/TestController`.
 - [ ] Google OAuth2 login (optional; do last in this phase, skip if blocked by needing real Google credentials and leave it behind a config flag).
 
