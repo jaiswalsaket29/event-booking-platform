@@ -28,7 +28,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] Public read endpoints: event list (paged, sortable by date, filter by city/category/date range, published only), event detail with artists + images + upcoming sessions, sessions for an event, seat map for a session (status + price per seat), locations, artists, artist page.
 - [x] Contact form `POST /api/v1/contact` (public) + admin list/resolve.
 - [x] Dev seed data (Flyway `R__` repeatable migration or a `dev`-profile `CommandLineRunner`): a few cities, venues, halls with seat layouts, artists, ~10 published events with sessions across all three seating modes. Use real-looking but fictional names.
-- [ ] Integration tests (Testcontainers + MockMvc) for the main endpoints and the admin authorization gate.
+- [x] Integration tests (Testcontainers + MockMvc) for the main endpoints and the admin authorization gate.
 
 ### Phase 4: Booking and concurrency
 - [ ] `SeatingStrategy` interface + three implementations (flat GA, tiered GA, assigned seating) with pessimistic locks.
