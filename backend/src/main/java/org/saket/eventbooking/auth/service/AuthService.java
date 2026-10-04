@@ -43,6 +43,7 @@ public class AuthService {
     }
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RefreshTokenService refreshTokenService;
 
     public AuthResponse login(LoginRequest request) {
         User user = userService.findByEmail(request.email())
@@ -55,8 +56,9 @@ public class AuthService {
         }
 
         String token = jwtTokenProvider.generateAccessToken(user);
+        String refreshToken = refreshTokenService.issue(user);
 
-        return new AuthResponse(token, toResponse(user));
+        return new AuthResponse(token,refreshToken, toResponse(user));
     }
 
     private UserResponse toResponse(User user) {
