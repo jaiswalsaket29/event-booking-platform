@@ -45,3 +45,9 @@ Template:
 - Alternative considered: a signed JWT verification link with no DB row (trade-off: stateless, but can't be made single-use or revoked on resend).
 - Interview hook: "Every one-time token is random, hashed at rest, single-use, and short-lived; resend invalidates the old one."
 - Note: the access token's `emailVerified` claim is stale until the next `/auth/refresh`; `/users/me` reads the live value.
+
+## Password reset (2026-10-04)
+- What: `POST /auth/forgot-password` always returns the same 200 message and, only if the account exists, emails a 30-minute single-use link (token hashed at rest, earlier tokens invalidated). `POST /auth/reset-password` sets the new BCrypt hash, burns the token, marks the email verified, and revokes all of the user's refresh tokens.
+- Why this way: identical responses prevent account enumeration. Revoking every refresh token means a reset actually evicts an attacker who had a session. Following an emailed link proves ownership of the address, so marking it verified is safe.
+- Alternative considered: emailing a temporary password (trade-off: simpler, but the secret sits in an inbox and stays valid; never acceptable).
+- Interview hook: "A password reset signs you out everywhere: the reset bulk-revokes refresh tokens in the same transaction."

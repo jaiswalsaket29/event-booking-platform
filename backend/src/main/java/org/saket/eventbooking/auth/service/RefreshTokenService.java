@@ -8,9 +8,11 @@ import org.saket.eventbooking.common.security.SecureTokens;
 import org.saket.eventbooking.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +70,12 @@ public class RefreshTokenService {
                 });
         // Intentionally silent if not found/already revoked — logout should be idempotent,
         // not leak whether a given token string was ever valid.
+    }
+
+    /** Signs the user out everywhere (e.g. after a password reset). */
+    @Transactional
+    public void revokeAllForUser(UUID userId) {
+        refreshTokenRepository.revokeAllForUser(userId);
     }
 
     private String generateRawToken() {
