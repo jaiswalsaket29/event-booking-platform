@@ -49,6 +49,9 @@ app:
     # Safety net: the sweeper expires PENDING bookings older than hold-ttl + sweep-grace
     # (covers expiry events missed while the app was down).
     sweep-grace: 30s
+    sweeper:
+      enabled: true
+      interval: 60s
     configure-keyspace-notifications: true
   seed:
     # Seed the demo catalog on startup when the database has no events (DemoDataSeeder).

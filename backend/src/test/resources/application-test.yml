@@ -8,3 +8,7 @@ spring:
 app:
   seed:
     demo-data: false
+  booking:
+    # the schedule is off; tests call StaleHoldSweeper.expireStale(...) with a chosen "now"
+    sweeper:
+      enabled: false
