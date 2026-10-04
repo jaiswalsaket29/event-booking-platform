@@ -91,3 +91,9 @@ Template:
 - Alternative considered: a denormalised `next_session_start` column on `events` (trade-off: simpler and faster queries, but it needs keeping in sync on every session change and still can't honour a date-range or city filter).
 - Interview hook: "The listing is a GROUP BY over sessions, so 'events in Pune next weekend, soonest first' is one SQL query plus one id lookup."
 - Note: the event search queries the `Session` entity from the event domain's repository. That's a read-only query, not a call into the session domain's repository, so I kept it there rather than move event listing into the session package.
+
+## Contact form (2026-10-04)
+- What: public `POST /api/v1/contact` (validated, stored as NEW), admin `GET /api/v1/admin/contact-messages` (paged, newest first, `?status=` filter) and idempotent `PATCH /admin/contact-messages/{id}/resolve`. `MessageResponse` moved to `common/dto` now that two domains use it.
+- Why this way: storing messages instead of only emailing them gives admins a triage queue in the dashboard. Resolve is a PATCH on a sub-resource because it's a single state transition, not a general edit, and repeating it is harmless.
+- Alternative considered: forwarding submissions straight to an inbox via `EmailService` (trade-off: no admin UI needed, but no status tracking; could be added on top later).
+- Interview hook: "Even the contact form goes through the same validation, error body and role gate as the rest of the API."

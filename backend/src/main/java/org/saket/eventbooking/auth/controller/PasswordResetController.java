@@ -3,7 +3,7 @@ package org.saket.eventbooking.auth.controller;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.auth.dto.EmailRequest;
-import org.saket.eventbooking.auth.dto.MessageResponse;
+import org.saket.eventbooking.common.dto.MessageResponse;
 import org.saket.eventbooking.auth.dto.ResetPasswordRequest;
 import org.saket.eventbooking.user.service.PasswordResetService;
 import org.saket.eventbooking.user.service.UserService;

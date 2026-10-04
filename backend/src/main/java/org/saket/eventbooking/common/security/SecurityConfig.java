@@ -50,6 +50,7 @@ public class SecurityConfig {
                         // public catalog reads
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**", "/api/v1/events/**",
                                 "/api/v1/sessions/**", "/api/v1/artists/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/v1/contact").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
