@@ -30,6 +30,10 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User", id));
     }
 
+    public Optional<User> findByProviderId(String providerId) {
+        return userRepository.findByProviderId(providerId);
+    }
+
     public boolean existsByEmail(String email) {
         return  userRepository.existsByEmail(email);
     }

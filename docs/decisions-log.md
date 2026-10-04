@@ -57,3 +57,11 @@ Template:
 - Why this way: putting CORS inside Spring Security means preflight `OPTIONS` requests are answered before authentication, so protected routes don't 401 their own preflights. No credentials mode, because tokens travel in headers rather than cookies.
 - Alternative considered: `@CrossOrigin` per controller or a `WebMvcConfigurer` mapping (trade-off: runs after the security filters, so preflights to protected routes get rejected).
 - Interview hook: "CORS lives in the security filter chain with an explicit allowlist from env, never `*`."
+
+## Google OAuth2 login (2026-10-04)
+- What: `spring-boot-starter-security-oauth2-client`, wired into the security chain only when a `ClientRegistrationRepository` exists, i.e. when the `google-oauth` profile is active and `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` are set. `OAuth2LoginSuccessHandler` maps the Google identity through `GoogleAccountService`, issues our own access + refresh tokens, and redirects to `FRONTEND_USER_URL/oauth2/callback#accessToken=...&refreshToken=...`.
+- Linking rules: match by Google `sub` first; else link to an existing account by email only if Google reports `email_verified`; else create a USER with no password. Admins are rejected (local login only). `auth_provider` keeps the original value after linking.
+- Why this way: the rest of the API only understands our JWT + refresh token, so OAuth terminates in them. Requiring `email_verified` before auto-linking prevents account takeover through an unverified Google email. Off by default, so the app runs without Google credentials.
+- Alternative considered: a one-time code in the redirect, exchanged for tokens via POST (trade-off: tokens never touch the URL at all, but needs a short-lived code store; fragments already stay out of server logs and Referer headers, so it's a later hardening step).
+- Interview hook: "Google proves identity, but my server still issues the session; and I only auto-link accounts when Google vouches for the email."
+- Not verified end to end with real Google credentials; covered by service tests for the linking rules and a wiring test that the authorization endpoint redirects to Google when enabled.

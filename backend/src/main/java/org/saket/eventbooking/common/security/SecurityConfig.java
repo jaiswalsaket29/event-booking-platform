@@ -1,6 +1,9 @@
 package org.saket.eventbooking.common.security;
 
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.auth.oauth2.OAuth2LoginFailureHandler;
+import org.saket.eventbooking.auth.oauth2.OAuth2LoginSuccessHandler;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -10,6 +13,7 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -22,6 +26,10 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
     private final RestAuthenticationEntryPoint authenticationEntryPoint;
     private final RestAccessDeniedHandler accessDeniedHandler;
+    private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
+    private final OAuth2LoginFailureHandler oAuth2LoginFailureHandler;
+    // Only present when Google client credentials are configured (the google-oauth profile).
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -45,6 +53,13 @@ public class SecurityConfig {
                         .accessDeniedHandler(accessDeniedHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        if (clientRegistrations.getIfAvailable() != null) {
+            // /oauth2/authorization/google starts the flow; /login/oauth2/code/google is the callback.
+            http.oauth2Login(oauth -> oauth
+                    .successHandler(oAuth2LoginSuccessHandler)
+                    .failureHandler(oAuth2LoginFailureHandler));
+        }
 
         return http.build();
     }

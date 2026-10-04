@@ -32,3 +32,19 @@ app:
     user-url: ${FRONTEND_USER_URL:http://localhost:5173}
 server:
   port: 8080
+---
+# Optional Google OAuth2 login. Off by default so the app runs without Google credentials.
+# Enable with SPRING_PROFILES_ACTIVE=google-oauth and set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.
+# Redirect URI to register with Google: {backend}/login/oauth2/code/google
+spring:
+  config:
+    activate:
+      on-profile: google-oauth
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope: openid,profile,email
