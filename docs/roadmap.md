@@ -35,7 +35,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] `POST /api/v1/bookings` creates a `PENDING` booking and holds capacity/seats. Requires `emailVerified` (403 otherwise). Hold TTL configurable (default 10 min).
 - [x] Redis: add `spring-boot-starter-data-redis`; TTL key per hold; keyspace-notification listener that releases expired holds and moves the booking out of `PENDING`. Add a Testcontainers Redis container for tests.
 - [x] `GET /api/v1/bookings` (my bookings), `GET /api/v1/bookings/{id}` (owner only).
-- [ ] Concurrency test: N threads booking the last seat / last capacity → exactly one succeeds.
+- [x] Concurrency test: N threads booking the last seat / last capacity → exactly one succeeds.
 
 ### Phase 5: Payments
 - [ ] `PaymentGateway` interface with a simulated implementation (deterministic success/failure via a test card or amount rule). Optional Razorpay test-mode implementation behind a profile.

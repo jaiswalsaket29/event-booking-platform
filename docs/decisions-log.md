@@ -135,3 +135,9 @@ Template:
 - Why this way: ownership is part of the query (`findByIdAndUserId`), so there's no load-then-check gap, and another user's booking returns 404 rather than 403, so booking ids can't be confirmed by guessing.
 - Alternative considered: 403 for other users' bookings (trade-off: more "honest", but it leaks that the id exists).
 - Interview hook: "Authorization for user-owned data is a WHERE clause, not an if-statement after the fetch."
+
+## Concurrency tests: no overselling (2026-10-04)
+- What: `BookingConcurrencyTest` releases 20–30 threads (distinct verified users) from a latch at the same inventory through the real `BookingService` and Testcontainers Postgres: last flat ticket, last ticket in a tier, one specific seat (each: exactly one success, the rest 409), 30 buyers for 10 tickets (exactly 10), and 24 overlapping two-seat requests around a ring (no deadlock, no seat in two bookings).
+- Why this way: it tests the real thing (actual row locks in actual Postgres), not a mock. I checked that it can fail: with the lock removed from the flat strategy (a plain `refresh`), 10 of 20 threads "bought" the single last ticket and 30 of 30 got one of 10 tickets.
+- Alternative considered: unit tests with mocked repositories (trade-off: fast, but they can't observe database locking, which is the thing under test).
+- Interview hook: "I proved the locking works by deleting it and watching the test sell one ticket ten times."
