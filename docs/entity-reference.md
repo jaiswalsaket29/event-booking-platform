@@ -212,8 +212,9 @@ The user-facing reservation record. Works identically regardless of seating stra
 | status | Enum (`PENDING`, `CONFIRMED`, `CANCELLED`, `FAILED`) | |
 | quantity | Integer | used for GA/tiered bookings (not assigned seating) |
 | totalAmount | BigDecimal | |
-| bookingReference | String | human-readable, e.g. "EVT-8X2K9P"; nullable, set only at `PENDING → CONFIRMED` |
+| bookingReference | String | `EVT-` + 12 random Crockford base32 chars (60 bits); nullable, set only at `PENDING → CONFIRMED` |
 | createdAt | Instant | |
+| confirmedAt | Instant | nullable; set at `PENDING → CONFIRMED` (V8); revenue reporting groups on it |
 
 **Relationships:** One `Booking` has many `BookingSeat` (assigned seating only) and many `Payment` attempts.
 
@@ -239,9 +240,13 @@ Links a `Booking` to the specific `SessionSeat`(s) reserved. Only populated for 
 | booking | Booking | `@ManyToOne`, LAZY *(see note)* |
 | amount | BigDecimal | |
 | status | Enum (`PENDING`, `SUCCESS`, `FAILED`, `REFUNDED`) | |
-| transactionId | String | from the payment gateway |
+| transactionId | String | from the payment gateway; unique (V8), webhooks match on it |
 | idempotencyKey | String | unique, indexed — prevents double-charging on retry; client-generated |
 | paidAt | Instant | nullable until success |
+| createdAt | Instant | when the attempt was opened (V9) |
+| failureReason | String | nullable; provider's reason when FAILED, e.g. "Card declined" (V8) |
+
+Status changes go only through `Booking.transitionTo` / `Payment.transitionTo`, which enforce the lifecycles defined on `BookingStatus` / `PaymentStatus` (see `design-decisions.md`).
 
 > **Note:** `@ManyToOne` rather than `@OneToOne`, because a booking can have multiple payment *attempts* if an earlier one fails. Query "the latest successful payment" rather than assuming exactly one payment per booking.
 
