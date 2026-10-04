@@ -22,9 +22,9 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] Google OAuth2 login (optional; do last in this phase, skip if blocked by needing real Google credentials and leave it behind a config flag).
 
 ### Phase 3: Catalog APIs
-- [ ] Repositories, services, DTOs for Location, Hall, Seat, Artist, Event, EventImage, Session, TicketTier.
-- [ ] Admin CRUD under `/api/v1/admin/**` (`@PreAuthorize("hasRole('ADMIN')")`). Include a bulk seat-layout endpoint for a hall (rows × seats per row × seat type).
-- [ ] Session creation validates seating/pricing mode (see `design-decisions.md`), generates `SessionSeat` rows for assigned seating with the price snapshot from a seat-type pricing table (multipliers on `basePrice` are fine: REGULAR 1.0, PREMIUM 1.5, RECLINER 2.0, kept in config).
+- [x] Repositories, services, DTOs for Location, Hall, Seat, Artist, Event, EventImage, Session, TicketTier.
+- [x] Admin CRUD under `/api/v1/admin/**` (`@PreAuthorize("hasRole('ADMIN')")`). Include a bulk seat-layout endpoint for a hall (rows × seats per row × seat type).
+- [x] Session creation validates seating/pricing mode (see `design-decisions.md`), generates `SessionSeat` rows for assigned seating with the price snapshot from a seat-type pricing table (multipliers on `basePrice` are fine: REGULAR 1.0, PREMIUM 1.5, RECLINER 2.0, kept in config).
 - [ ] Public read endpoints: event list (paged, sortable by date, filter by city/category/date range, published only), event detail with artists + images + upcoming sessions, sessions for an event, seat map for a session (status + price per seat), locations, artists, artist page.
 - [ ] Contact form `POST /api/v1/contact` (public) + admin list/resolve.
 - [ ] Dev seed data (Flyway `R__` repeatable migration or a `dev`-profile `CommandLineRunner`): a few cities, venues, halls with seat layouts, artists, ~10 published events with sessions across all three seating modes. Use real-looking but fictional names.
