@@ -32,3 +32,9 @@ Template:
 - Why this way: public signup can never grant ADMIN, so the first admin has to come from outside the API. A migration makes every environment (including Testcontainers) start with a known admin, and the integration tests log in with it.
 - Alternative considered: a startup `CommandLineRunner` reading the admin email/password from env (trade-off: no password hash in git, but the account then depends on runtime config; a reasonable prod upgrade).
 - Interview hook: "Admins are provisioned, never self-registered; the seed holds only a BCrypt hash, and the dev password is documented as dev-only."
+
+## Current-user endpoint (2026-10-04)
+- What: `GET /api/v1/users/me` returns the caller's `UserResponse`, resolved from the UUID principal the JWT filter sets.
+- Why this way: the frontends need fresh profile state (especially `emailVerified`, which can change after the access token was issued), so it's read from the DB, not the token claims. A deleted user with a still-valid token gets 404.
+- Alternative considered: decoding claims client-side only (trade-off: no round trip, but stale after verification or role changes).
+- Interview hook: "The token says who you are; the database says what you look like now."

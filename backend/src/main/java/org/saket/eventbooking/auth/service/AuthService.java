@@ -68,9 +68,6 @@ public class AuthService {
     }
 
     private UserResponse toResponse(User user) {
-        return new UserResponse(
-                user.getId(), user.getName(), user.getEmail(),
-                user.getRole(), user.getEmailVerified()
-        );
+        return UserResponse.from(user);
     }
 }
