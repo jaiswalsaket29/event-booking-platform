@@ -10,8 +10,10 @@ import org.saket.eventbooking.booking.enums.BookingStatus;
 import org.saket.eventbooking.booking.hold.BookingHoldStore;
 import org.saket.eventbooking.booking.repository.BookingRepository;
 import org.saket.eventbooking.booking.repository.BookingSeatRepository;
+import org.saket.eventbooking.common.dto.PageResponse;
 import org.saket.eventbooking.common.exception.BadRequestException;
 import org.saket.eventbooking.common.exception.ForbiddenException;
+import org.saket.eventbooking.common.exception.ResourceNotFoundException;
 import org.saket.eventbooking.location.service.HallService;
 import org.saket.eventbooking.session.entity.Session;
 import org.saket.eventbooking.session.entity.SessionSeat;
@@ -21,6 +23,8 @@ import org.saket.eventbooking.session.service.seating.Hold;
 import org.saket.eventbooking.session.service.seating.HoldRequest;
 import org.saket.eventbooking.user.entity.User;
 import org.saket.eventbooking.user.service.UserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -83,6 +87,24 @@ public class BookingService {
         }
 
         holdStore.place(booking.getId(), properties.holdTtl());
+        return toResponses(List.of(booking)).getFirst();
+    }
+
+    @Transactional(readOnly = true)
+    public PageResponse<BookingResponse> listMine(UUID userId, Pageable pageable) {
+        Page<Booking> page = bookingRepository.findByUserId(userId, pageable);
+        List<BookingResponse> content = toResponses(page.getContent());
+        return new PageResponse<>(content, page.getNumber(), page.getSize(), page.getTotalElements(), page.getTotalPages());
+    }
+
+    /**
+     * Someone else's booking is reported as not found (404), not forbidden: booking ids must not be
+     * confirmable by guessing, and the owner check is part of the query itself.
+     */
+    @Transactional(readOnly = true)
+    public BookingResponse getMine(UUID userId, UUID bookingId) {
+        Booking booking = bookingRepository.findByIdAndUserId(bookingId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
         return toResponses(List.of(booking)).getFirst();
     }
 

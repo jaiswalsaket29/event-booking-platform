@@ -129,3 +129,9 @@ Template:
 - Why this way: Redis gives near-instant expiry without polling, but pub/sub is fire-and-forget: an event fired while the app is restarting is lost forever. The sweeper bounds that worst case, and because expiry is "lock booking row → check PENDING → transition → release", the listener, the sweeper and multiple app instances can all race safely and inventory is released exactly once (tested with 8 concurrent expirers). Expiry sets CANCELLED because no payment attempts exist yet; Phase 5 will choose FAILED when an attempt was made, per the state machine.
 - Alternative considered: polling only (trade-off: simplest and robust, but holds linger up to one poll interval and the DB is queried constantly) or Redisson delayed queues (more guarantees, but a heavy extra dependency).
 - Interview hook: "Redis is the timer, the database row lock is the referee, and a sweeper covers the events Redis can't guarantee."
+
+## My bookings endpoints (2026-10-04)
+- What: `GET /api/v1/bookings` (caller's bookings, paged, newest first) and `GET /api/v1/bookings/{id}`. Both build `BookingResponse` with entity graphs for session/event/venue/tier and one batched query for seats.
+- Why this way: ownership is part of the query (`findByIdAndUserId`), so there's no load-then-check gap, and another user's booking returns 404 rather than 403, so booking ids can't be confirmed by guessing.
+- Alternative considered: 403 for other users' bookings (trade-off: more "honest", but it leaks that the id exists).
+- Interview hook: "Authorization for user-owned data is a WHERE clause, not an if-statement after the fetch."
