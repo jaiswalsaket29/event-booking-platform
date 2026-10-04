@@ -22,7 +22,7 @@ import java.util.UUID;
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
-@Import(TestcontainersConfiguration.class)
+@Import({TestcontainersConfiguration.class, CatalogFixtures.class})
 public abstract class IntegrationTest {
 
     @Autowired
@@ -36,6 +36,9 @@ public abstract class IntegrationTest {
 
     @Autowired
     protected RecordingEmailService emailService;
+
+    @Autowired
+    protected CatalogFixtures fixtures;
 
     protected static String uniqueEmail() {
         return "user-" + UUID.randomUUID() + "@test.dev";
