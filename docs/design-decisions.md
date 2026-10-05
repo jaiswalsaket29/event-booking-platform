@@ -32,7 +32,7 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 - **Unidirectional by default** (`@ManyToOne` only); add the inverse side only for a concrete recurring need. E.g. halls per location → `hallRepository.findByLocationId`, not `Location.halls`.
 - **Explicit join entities** (`EventArtist`, `BookingSeat`), never bare `@ManyToMany`.
 - **Flyway owns the schema** (`ddl-auto: validate`). New change = new `V<n>__*.sql`. Never edit an applied migration.
-- **Timestamps** are `Instant`, set by the service layer. Tests run with `-Duser.timezone=UTC`.
+- **Timestamps** are `Instant`, set by the service layer, stored as `timestamptz` (V10). The JVM runs in UTC everywhere (pinned in `BackendApplication.main`; tests with `-Duser.timezone=UTC`); business days use `app.reporting.zone` explicitly.
 - No `@Data` on entities; `@Getter @Setter @NoArgsConstructor @AllArgsConstructor`.
 
 ## Domain modeling

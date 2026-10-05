@@ -241,3 +241,9 @@ Template:
 - Alternative considered: hand-written OpenAPI YAML (trade-off: full control over wording, but it goes stale as soon as an endpoint changes).
 - Interview hook: "The API contract is generated from the code, public in dev and off in production."
 
+## timestamptz everywhere, JVM in UTC (2026-10-05, Phase 7)
+- What: V10 converts every `timestamp` column (users, sessions, session seats, bookings, payments, tokens, contact messages, refresh tokens) to `timestamptz`, reading existing values as Asia/Kolkata wall-clock time (how the app had been writing them). `BackendApplication` pins the JVM to UTC instead of Asia/Kolkata. `TimestampColumnsTest` fails if any table gets a zone-less timestamp column, and reads a stored instant under three session time zones to show it doesn't move. Verified on the dev database: the admin's `created_at` 21:42:50 (IST wall clock) became 16:12:50Z, and the API returned the same instants before and after.
+- Why this way: a zone-less `timestamp` means "whatever the writer's session zone was". The app wrote with a Kolkata JVM, tests with UTC, and `DEFAULT now()` used the session zone, so the same instant could be stored three ways. With `timestamptz` the database stores an absolute instant and the JVM zone stops mattering for data. Removing the pin entirely exposed why it existed: this Windows machine reports its zone as the legacy id `Asia/Calcutta`, pgjdbc sends that to Postgres at connect time, and Postgres refuses the connection. Pinning UTC keeps dev, tests and containers identical.
+- Alternative considered: keeping `timestamp` and setting `hibernate.jdbc.time_zone: UTC` (trade-off: no migration, but `DEFAULT now()` columns and any SQL client still depend on their session zone).
+- Interview hook: "Store instants as timestamptz, run servers in UTC, and convert to a business zone only where a human-facing 'day' is computed."
+

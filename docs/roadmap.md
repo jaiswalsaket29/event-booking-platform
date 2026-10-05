@@ -69,7 +69,7 @@ Decide before building:
 ### Phase 7: Production
 
 Notes from the Phase 5 review:
-- Convert timestamp columns to `timestamptz` before real data exists (JVM is pinned to Asia/Kolkata in `main` but UTC in tests, and several columns default to the DB's `now()`).
+- Done: timestamp columns converted to `timestamptz` (V10) and the JVM pinned to UTC.
 - Behind the platform's proxy, set `server.forward-headers-strategy: native` (Tomcat RemoteIpValve, trusted proxies only) so rate limits see the real client IP; never read `X-Forwarded-For` directly.
 - Set `API_DOCS_ENABLED=false` in production (springdoc spec + Swagger UI are public whenever enabled).
 - Production must override the seeded admin password and `PAYMENT_WEBHOOK_SECRET` (a prod profile should refuse to start with the dev default).
