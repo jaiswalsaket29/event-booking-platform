@@ -1,0 +1,5 @@
+# Shell scripts must keep LF endings (they run on Linux CI runners and in containers).
+mvnw text eol=lf
+*.sh text eol=lf
+# Windows scripts keep CRLF.
+*.cmd text eol=crlf

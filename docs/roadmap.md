@@ -75,7 +75,7 @@ Notes from the Phase 5 review:
 - Done: the prod profile requires `ADMIN_PASSWORD` and real JWT/webhook secrets, and `ProductionReadinessCheck` refuses to start with dev defaults.
 - [x] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
 - [x] Actuator health endpoint (public), everything else locked down.
-- [ ] GitHub Actions: `./mvnw verify` on push/PR; frontend builds.
+- [x] GitHub Actions: `./mvnw verify` on push/PR; frontend builds. (Workflow committed; it first runs when `main` is pushed. Frontend jobs no-op until each app has a `package.json`.)
 - [ ] Deploy: backend + managed Postgres + Redis (Render/Railway/Fly), frontends on Vercel/Netlify. Document in the README.
 
 ## Remaining: frontends
