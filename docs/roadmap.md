@@ -77,7 +77,7 @@ Notes from the Phase 5 review:
 - [x] Actuator health endpoint (public), everything else locked down.
 - [x] SMTP `EmailService` (found while preparing the deploy: with only the logging implementation, nobody on a deployed site could verify their email, and booking requires it).
 - [x] GitHub Actions: `./mvnw verify` on push/PR; frontend builds. (Workflow committed; it first runs when `main` is pushed. Frontend jobs no-op until each app has a `package.json`.)
-- [ ] Deploy: backend + managed Postgres + Redis (Render/Railway/Fly), frontends on Vercel/Netlify. Document in the README.
+- [ ] Deploy: backend + managed Postgres + Redis (Render/Railway/Fly), frontends on Vercel/Netlify. Document in the README. **Prepared, not deployed:** `render.yaml` Blueprint and `docs/deployment.md` are ready; the remaining step is creating the Render Blueprint from a Render account (and adding SMTP settings). Frontends come after they're built.
 
 ## Remaining: frontends
 

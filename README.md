@@ -20,3 +20,17 @@ Use `.\mvnw.cmd` instead of `./mvnw` in Windows PowerShell.
 | Admin | `admin@eventbooking.dev` | `Admin@12345` |
 
 The admin account is seeded by Flyway migration `V6__seed_admin_user.sql`. These credentials are for local development only. With the `prod` profile the app sets the admin password from `ADMIN_PASSWORD` and refuses to start while the dev password (or the dev JWT/webhook secrets) are still in use.
+
+## Tests and CI
+
+```bash
+cd backend
+./mvnw verify               # needs Docker running (Testcontainers starts Postgres and Redis)
+```
+
+GitHub Actions (`.github/workflows/ci.yml`) runs the same `./mvnw verify` on every push to `main` and every pull request, builds the Docker image, and lints/builds the frontends once they exist.
+
+## Deployment
+
+The backend runs from `backend/Dockerfile` with the `prod` profile; every secret comes from environment variables, and it refuses to start with the dev secrets above. API docs are off in production; locally they're at http://localhost:8080/swagger-ui.html. `render.yaml` is a Render Blueprint for the API, PostgreSQL and Redis. See [`docs/deployment.md`](docs/deployment.md) for the variables, the Render steps and how to run the production image locally.
+

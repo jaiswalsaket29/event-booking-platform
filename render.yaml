@@ -1,0 +1,69 @@
+# Render Blueprint: backend API + Postgres 16 + Key Value (Redis), all on the free plan.
+# Render dashboard → New → Blueprint → pick this repo. See docs/deployment.md for the full guide.
+services:
+  - type: web
+    name: eventbooking-api
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    rootDir: ./backend # only backend changes trigger a deploy
+    plan: free
+    region: singapore
+    healthCheckPath: /actuator/health/readiness
+    envVars:
+      - key: DB_HOST
+        fromDatabase:
+          name: eventbooking-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: eventbooking-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: eventbooking-db
+          property: database
+      - key: DB_USER
+        fromDatabase:
+          name: eventbooking-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: eventbooking-db
+          property: password
+      - key: REDIS_URL
+        fromService:
+          type: keyvalue
+          name: eventbooking-redis
+          property: connectionString
+      # random base64 256-bit values, generated once by Render
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true
+      # asked for when the Blueprint is first created
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: FRONTEND_USER_URL
+        sync: false
+      # portfolio demo: seed the fictional catalog into the empty database
+      - key: SEED_DEMO_DATA
+        value: "true"
+
+  - type: keyvalue
+    name: eventbooking-redis
+    plan: free
+    region: singapore
+    ipAllowList: [] # internal connections only
+    # Holds, rate-limit buckets and cache entries all carry TTLs; never evict them early.
+    maxmemoryPolicy: noeviction
+
+databases:
+  - name: eventbooking-db
+    databaseName: eventbooking
+    user: eventbooking
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
