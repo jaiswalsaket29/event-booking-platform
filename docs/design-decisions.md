@@ -88,7 +88,7 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 - CORS: explicit allowlist of the two frontend origins, never `*`.
 - `@Valid` + Bean Validation on every request DTO.
 - Global `@RestControllerAdvice`: consistent error body, no stack traces.
-- Rate limiting (Redis token bucket) on login, password-reset request, booking attempts.
+- Rate limiting (Redis token bucket, Phase 6) on login and forgot-password (per client IP and per email) and booking creation (per user): 429 with `Retry-After`. The bucket check is one Lua script (atomic across instances, Redis clock), identifiers are hashed in keys, and a Redis outage fails open. Client IP is `getRemoteAddr()`; behind a proxy it's rewritten by Tomcat for trusted proxies only.
 - Never concatenate user input into JPQL/native queries.
 - Secrets via env vars / `.env` (gitignored); never committed.
 

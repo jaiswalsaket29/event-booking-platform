@@ -7,6 +7,7 @@ import org.saket.eventbooking.booking.dto.CreateBookingRequest;
 import org.saket.eventbooking.booking.service.BookingQrService;
 import org.saket.eventbooking.booking.service.BookingService;
 import org.saket.eventbooking.common.dto.PageResponse;
+import org.saket.eventbooking.common.ratelimit.RateLimits;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -33,12 +34,17 @@ public class BookingController {
 
     private final BookingService bookingService;
     private final BookingQrService bookingQrService;
+    private final RateLimits rateLimits;
 
-    /** Holds the tickets for {@code app.booking.hold-ttl} and returns the PENDING booking. */
+    /**
+     * Holds the tickets for {@code app.booking.hold-ttl} and returns the PENDING booking.
+     * Rate-limited per user: each hold takes inventory off sale, so hold-and-abandon loops are throttled.
+     */
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public BookingResponse create(@AuthenticationPrincipal UUID userId,
                                   @Valid @RequestBody CreateBookingRequest request) {
+        rateLimits.bookingCreation(userId);
         return bookingService.create(userId, request);
     }
 

@@ -6,9 +6,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.saket.eventbooking.auth.exception.EmailAlreadyExistsException;
 import org.saket.eventbooking.auth.exception.InvalidCredentialsException;
 import org.saket.eventbooking.auth.exception.InvalidRefreshTokenException;
+import org.saket.eventbooking.common.ratelimit.RateLimitExceededException;
 import org.saket.eventbooking.payment.webhook.InvalidWebhookSignatureException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.core.PropertyReferenceException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -121,6 +123,14 @@ public class GlobalExceptionHandler {
             IllegalStatusTransitionException.class})
     public ResponseEntity<ApiError> handleConflict(RuntimeException ex, HttpServletRequest request) {
         return build(HttpStatus.CONFLICT, ex.getMessage(), request);
+    }
+
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<ApiError> handleRateLimited(RateLimitExceededException ex, HttpServletRequest request) {
+        return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
+                .header(HttpHeaders.RETRY_AFTER, String.valueOf(ex.retryAfterSeconds()))
+                .body(ApiError.of(HttpStatus.TOO_MANY_REQUESTS.value(),
+                        HttpStatus.TOO_MANY_REQUESTS.getReasonPhrase(), ex.getMessage(), request.getRequestURI()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

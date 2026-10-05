@@ -73,6 +73,14 @@ app:
     # they live briefly; event detail (event, line-up, images; never sessions) is evicted on admin edits.
     event-list-ttl: 60s
     event-detail-ttl: 10m
+  rate-limit:
+    # Redis token buckets: capacity = burst, refilled continuously over refill-period.
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    login-per-ip: { capacity: 30, refill-period: 5m }
+    login-per-email: { capacity: 10, refill-period: 15m }
+    forgot-password-per-ip: { capacity: 10, refill-period: 15m }
+    forgot-password-per-email: { capacity: 3, refill-period: 15m }
+    booking-per-user: { capacity: 10, refill-period: 1m }
   reporting:
     # Business time zone: dashboard "days" are calendar days here.
     zone: Asia/Kolkata
