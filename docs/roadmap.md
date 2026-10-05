@@ -53,7 +53,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [ ] `POST /api/v1/bookings/{id}/cancel`: the owner abandons a PENDING checkout, releasing the hold now (CANCELLED with no attempt, FAILED if attempted). Refused while a payment is PENDING.
 - [x] Test refresh-token replay: a rotated (revoked) token is rejected with 401.
 - [ ] Surface payments stuck in PENDING (no outcome after the hold ended) to admins: dashboard count and an admin bookings filter.
-- [ ] Bound `SimulatedPaymentGateway`'s in-memory idempotency map (it grows forever in a long-running demo).
+- [x] Bound `SimulatedPaymentGateway`'s in-memory idempotency map (it grows forever in a long-running demo).
 
 ### Phase 6: Polish
 

@@ -2,9 +2,10 @@ package org.saket.eventbooking.payment.gateway;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Deterministic stand-in for a card processor. The outcome depends only on the payment-method token,
@@ -29,7 +30,10 @@ public class SimulatedPaymentGateway implements PaymentGateway {
     public static final String TOKEN_DECLINE = "tok_decline";
     public static final String TOKEN_INSUFFICIENT_FUNDS = "tok_insufficient_funds";
 
-    private final Map<String, ChargeResult> chargesByIdempotencyKey = new ConcurrentHashMap<>();
+    /** Remembered charges for idempotency; least-recently-used beyond this are forgotten. */
+    static final int DEFAULT_MAX_REMEMBERED_CHARGES = 10_000;
+
+    private final Map<String, ChargeResult> chargesByIdempotencyKey;
     private final SimulatedWebhookSender webhookSender; // null = SYNC mode
 
     /** SYNC mode: outcomes are returned directly. */
@@ -39,7 +43,27 @@ public class SimulatedPaymentGateway implements PaymentGateway {
 
     /** WEBHOOK mode when {@code webhookSender} is given. */
     public SimulatedPaymentGateway(SimulatedWebhookSender webhookSender) {
+        this(webhookSender, DEFAULT_MAX_REMEMBERED_CHARGES);
+    }
+
+    /**
+     * Real providers keep idempotency keys for a limited time (often 24h); this keeps a bounded LRU so
+     * a long-running demo doesn't grow memory forever. Our own payments table de-duplicates keys
+     * independently, so forgetting old ones here is safe.
+     */
+    SimulatedPaymentGateway(SimulatedWebhookSender webhookSender, int maxRememberedCharges) {
         this.webhookSender = webhookSender;
+        this.chargesByIdempotencyKey = Collections.synchronizedMap(
+                new LinkedHashMap<>(16, 0.75f, true) {
+                    @Override
+                    protected boolean removeEldestEntry(Map.Entry<String, ChargeResult> eldest) {
+                        return size() > maxRememberedCharges;
+                    }
+                });
+    }
+
+    int rememberedCharges() {
+        return chargesByIdempotencyKey.size();
     }
 
     @Override
