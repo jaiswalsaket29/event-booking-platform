@@ -19,4 +19,4 @@ Use `.\mvnw.cmd` instead of `./mvnw` in Windows PowerShell.
 |-------|--------------------------|---------------|
 | Admin | `admin@eventbooking.dev` | `Admin@12345` |
 
-The admin account is seeded by Flyway migration `V6__seed_admin_user.sql`. These credentials are for local development only; change the password before any real deployment.
+The admin account is seeded by Flyway migration `V6__seed_admin_user.sql`. These credentials are for local development only. With the `prod` profile the app sets the admin password from `ADMIN_PASSWORD` and refuses to start while the dev password (or the dev JWT/webhook secrets) are still in use.

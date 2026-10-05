@@ -70,9 +70,9 @@ Decide before building:
 
 Notes from the Phase 5 review:
 - Done: timestamp columns converted to `timestamptz` (V10) and the JVM pinned to UTC.
-- Behind the platform's proxy, set `server.forward-headers-strategy: native` (Tomcat RemoteIpValve, trusted proxies only) so rate limits see the real client IP; never read `X-Forwarded-For` directly.
-- Set `API_DOCS_ENABLED=false` in production (springdoc spec + Swagger UI are public whenever enabled).
-- Production must override the seeded admin password and `PAYMENT_WEBHOOK_SECRET` (a prod profile should refuse to start with the dev default).
+- Done (prod profile): behind the platform's proxy, `server.forward-headers-strategy: native` (Tomcat RemoteIpValve, trusted proxies only) so rate limits see the real client IP; never read `X-Forwarded-For` directly.
+- Done (prod profile): API docs default to off (`API_DOCS_ENABLED=false`).
+- Done: the prod profile requires `ADMIN_PASSWORD` and real JWT/webhook secrets, and `ProductionReadinessCheck` refuses to start with dev defaults.
 - [ ] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
 - [x] Actuator health endpoint (public), everything else locked down.
 - [ ] GitHub Actions: `./mvnw verify` on push/PR; frontend builds.
