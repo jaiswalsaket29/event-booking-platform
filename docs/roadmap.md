@@ -73,7 +73,7 @@ Notes from the Phase 5 review:
 - Done (prod profile): behind the platform's proxy, `server.forward-headers-strategy: native` (Tomcat RemoteIpValve, trusted proxies only) so rate limits see the real client IP; never read `X-Forwarded-For` directly.
 - Done (prod profile): API docs default to off (`API_DOCS_ENABLED=false`).
 - Done: the prod profile requires `ADMIN_PASSWORD` and real JWT/webhook secrets, and `ProductionReadinessCheck` refuses to start with dev defaults.
-- [ ] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
+- [x] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
 - [x] Actuator health endpoint (public), everything else locked down.
 - [ ] GitHub Actions: `./mvnw verify` on push/PR; frontend builds.
 - [ ] Deploy: backend + managed Postgres + Redis (Render/Railway/Fly), frontends on Vercel/Netlify. Document in the README.
