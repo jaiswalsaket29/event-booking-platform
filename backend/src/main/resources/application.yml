@@ -68,6 +68,11 @@ app:
       # WEBHOOK: outcome arrives as a signed webhook (realistic). SYNC: charges finish immediately.
       mode: ${PAYMENT_SIMULATED_MODE:WEBHOOK}
       webhook-delay: 1500ms
+  cache:
+    # Public catalog cache (Redis). Listings carry no availability but go stale as sessions start, so
+    # they live briefly; event detail (event, line-up, images; never sessions) is evicted on admin edits.
+    event-list-ttl: 60s
+    event-detail-ttl: 10m
   reporting:
     # Business time zone: dashboard "days" are calendar days here.
     zone: Asia/Kolkata

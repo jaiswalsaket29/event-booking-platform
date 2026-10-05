@@ -1,6 +1,7 @@
 package org.saket.eventbooking.event.service;
 
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.common.cache.CacheNames;
 import org.saket.eventbooking.common.dto.PageResponse;
 import org.saket.eventbooking.common.exception.ConflictException;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
@@ -8,6 +9,7 @@ import org.saket.eventbooking.event.dto.ArtistRequest;
 import org.saket.eventbooking.event.dto.ArtistResponse;
 import org.saket.eventbooking.event.entity.Artist;
 import org.saket.eventbooking.event.repository.ArtistRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -47,6 +49,8 @@ public class ArtistService {
         return ArtistResponse.from(artistRepository.save(artist));
     }
 
+    // the artist's name/photo/genre is embedded in cached event line-ups
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, allEntries = true)
     @Transactional
     public ArtistResponse update(UUID id, ArtistRequest request) {
         Artist artist = getEntity(id);
@@ -54,6 +58,8 @@ public class ArtistService {
         return ArtistResponse.from(artist);
     }
 
+    // the artist's name/photo/genre is embedded in cached event line-ups
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, allEntries = true)
     @Transactional
     public void delete(UUID id) {
         Artist artist = getEntity(id);

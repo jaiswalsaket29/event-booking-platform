@@ -1,6 +1,7 @@
 package org.saket.eventbooking.location.service;
 
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.common.cache.EvictsEventListings;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
 import org.saket.eventbooking.location.dto.LocationRequest;
 import org.saket.eventbooking.location.dto.LocationResponse;
@@ -53,6 +54,7 @@ public class LocationService {
         return LocationResponse.from(locationRepository.save(location));
     }
 
+    @EvictsEventListings // listings filter by city
     @Transactional
     public LocationResponse update(UUID id, LocationRequest request) {
         Location location = getEntity(id);
@@ -61,6 +63,7 @@ public class LocationService {
     }
 
     /** Fails with 409 (FK violation) while halls or sessions still reference the location. */
+    @EvictsEventListings // listings filter by city
     @Transactional
     public void delete(UUID id) {
         locationRepository.delete(getEntity(id));

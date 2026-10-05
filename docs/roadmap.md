@@ -61,7 +61,7 @@ Decide before building:
 - Caching vs. live availability: public event detail and session responses include `ticketsAvailable`, sessions and prices, which change on every booking. Cache only the slow-changing parts (event, line-up, images) or use a very short TTL; don't serve stale "3 left".
 - Rate-limit keys: login/forgot-password per IP + per email, booking creation per user. Behind a proxy (Phase 7) the client IP comes from trusted `X-Forwarded-For`.
 
-- [ ] Redis cache-aside on the public event list/detail, evicted on admin edits.
+- [x] Redis cache-aside on the public event list/detail, evicted on admin edits.
 - [ ] Rate limiting (Redis token bucket) on login, forgot-password, booking creation.
 - [ ] Image upload: pre-signed R2 URL endpoint behind an `ObjectStorage` interface. If no R2 credentials are configured, fall back to accepting an image URL directly.
 - [ ] OpenAPI/Swagger UI via springdoc (public in dev).

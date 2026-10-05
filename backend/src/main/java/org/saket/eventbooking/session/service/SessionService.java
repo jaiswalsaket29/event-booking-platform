@@ -6,6 +6,7 @@ import org.saket.eventbooking.common.exception.ConflictException;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
 import org.saket.eventbooking.event.entity.Event;
 import org.saket.eventbooking.event.enums.EventStatus;
+import org.saket.eventbooking.common.cache.EvictsEventListings;
 import org.saket.eventbooking.event.service.EventService;
 import org.saket.eventbooking.location.dto.LocationResponse;
 import org.saket.eventbooking.location.entity.Hall;
@@ -71,6 +72,7 @@ public class SessionService {
 
     // ---------------------------------------------------------------- creation
 
+    @EvictsEventListings
     @Transactional
     public SessionResponse create(UUID eventId, SessionRequest request) {
         Event event = eventService.getEntity(eventId);
@@ -230,6 +232,7 @@ public class SessionService {
      * Updates timing and status. Moving to CANCELLED cascades (see {@link #cancel}); a cancelled session
      * can't be reopened and a completed one can't be cancelled.
      */
+    @EvictsEventListings
     @Transactional
     public SessionResponse update(UUID id, SessionUpdateRequest request) {
         Session session = getWithDetails(id);
@@ -274,6 +277,7 @@ public class SessionService {
     }
 
     /** Removes the session with its seats and tiers. 409 once bookings reference it. */
+    @EvictsEventListings
     @Transactional
     public void delete(UUID id) {
         Session session = getEntity(id);
@@ -287,6 +291,7 @@ public class SessionService {
         }
     }
 
+    @EvictsEventListings
     @Transactional
     public SessionResponse addTier(UUID sessionId, TicketTierRequest request) {
         Session session = getWithDetails(sessionId);
@@ -305,6 +310,7 @@ public class SessionService {
      * Changing total capacity shifts available capacity by the same delta, so tickets already sold
      * stay sold. Refused if that would leave negative availability.
      */
+    @EvictsEventListings
     @Transactional
     public SessionResponse updateTier(UUID tierId, TicketTierRequest request) {
         TicketTier tier = ticketTierRepository.findByIdForUpdate(tierId)
@@ -329,6 +335,7 @@ public class SessionService {
         return toResponse(getWithDetails(session.getId()));
     }
 
+    @EvictsEventListings
     @Transactional
     public SessionResponse deleteTier(UUID tierId) {
         TicketTier tier = ticketTierRepository.findByIdForUpdate(tierId)

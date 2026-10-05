@@ -2,6 +2,8 @@ package org.saket.eventbooking.event.service;
 
 import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.common.cache.CacheNames;
+import org.saket.eventbooking.common.cache.EvictsEventListings;
 import org.saket.eventbooking.common.dto.PageResponse;
 import org.saket.eventbooking.common.exception.BadRequestException;
 import org.saket.eventbooking.common.exception.ConflictException;
@@ -22,6 +24,8 @@ import org.saket.eventbooking.event.repository.EventImageRepository;
 import org.saket.eventbooking.event.repository.EventRepository;
 import org.saket.eventbooking.event.repository.EventSearchRepository;
 import org.saket.eventbooking.event.event.EventCancelledEvent;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -52,7 +56,14 @@ public class EventService {
     private final EventSearchRepository eventSearchRepository;
     private final ApplicationEventPublisher events;
 
-    /** Public listing: published events with an upcoming scheduled session matching the filters. */
+    /**
+     * Public listing: published events with an upcoming scheduled session matching the filters.
+     * Cached briefly (it holds no availability, only next date and "from" price); free-text searches are
+     * not cached, since their keys are unbounded.
+     */
+    @Cacheable(cacheNames = CacheNames.EVENT_LIST,
+            key = "#criteria.toString() + '|' + #pageable.pageNumber + '|' + #pageable.pageSize",
+            condition = "#criteria.query() == null || #criteria.query().isBlank()")
     @Transactional(readOnly = true)
     public PageResponse<EventSummaryResponse> searchPublished(EventSearchCriteria criteria, Pageable pageable) {
         if (criteria.from() != null && criteria.to() != null && !criteria.to().isAfter(criteria.from())) {
@@ -68,6 +79,7 @@ public class EventService {
         });
     }
 
+    @Cacheable(cacheNames = CacheNames.EVENT_CATEGORIES, key = "'all'")
     @Transactional(readOnly = true)
     public List<String> listPublishedCategories() {
         return eventRepository.findDistinctCategories(EventStatus.PUBLISHED);
@@ -95,7 +107,8 @@ public class EventService {
         return toDetail(getEntity(id));
     }
 
-    /** Public view: anything that isn't PUBLISHED doesn't exist. */
+    /** Public view: anything that isn't PUBLISHED doesn't exist. Cached; sessions are not part of it. */
+    @Cacheable(cacheNames = CacheNames.EVENT_DETAIL, key = "#id.toString()")
     @Transactional(readOnly = true)
     public EventDetailResponse getPublishedDetail(UUID id) {
         Event event = getPublishedEntity(id);
@@ -115,6 +128,7 @@ public class EventService {
                 .orElseThrow(() -> new ResourceNotFoundException("Event", id));
     }
 
+    @EvictsEventListings
     @Transactional
     public EventResponse create(EventRequest request) {
         Event event = new Event();
@@ -128,6 +142,8 @@ public class EventService {
      * sessions are cancelled → their bookings are cancelled (see design-decisions.md). A cancelled event
      * can't be reopened, because the cascade can't be undone.
      */
+    @EvictsEventListings
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, key = "#id.toString()")
     @Transactional
     public EventResponse update(UUID id, EventRequest request) {
         Event event = getEntity(id);
@@ -145,6 +161,8 @@ public class EventService {
     }
 
     /** Images and line-up go with the event (ON DELETE CASCADE); 409 while sessions exist. */
+    @EvictsEventListings
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, key = "#id.toString()")
     @Transactional
     public void delete(UUID id) {
         Event event = getEntity(id);
@@ -156,6 +174,8 @@ public class EventService {
         }
     }
 
+    @EvictsEventListings
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, key = "#eventId.toString()")
     @Transactional
     public EventDetailResponse replaceArtists(UUID eventId, EventArtistsRequest request) {
         Event event = getEntity(eventId);
@@ -178,6 +198,8 @@ public class EventService {
         return toDetail(event);
     }
 
+    @EvictsEventListings
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, key = "#eventId.toString()")
     @Transactional
     public EventDetailResponse addImage(UUID eventId, EventImageRequest request) {
         Event event = getEntity(eventId);
@@ -189,6 +211,8 @@ public class EventService {
         return toDetail(event);
     }
 
+    @EvictsEventListings
+    @CacheEvict(cacheNames = CacheNames.EVENT_DETAIL, key = "#eventId.toString()")
     @Transactional
     public void deleteImage(UUID eventId, UUID imageId) {
         EventImage image = eventImageRepository.findByIdAndEventId(imageId, eventId)

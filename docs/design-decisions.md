@@ -78,6 +78,11 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 - **Payment grace (Phase 5b):** expiry does not end a booking while a payment opened within `app.booking.payment-grace` (2m) is still `PENDING`; the sweeper retries after. A hold can therefore overrun its TTL by at most the grace plus one sweep interval, in exchange for never failing a booking whose payment is about to succeed.
 - **QR code:** zxing, generated at `CONFIRMED`, encodes `bookingReference`, regenerated on demand (not stored). One QR per booking.
 
+## Caching (Phase 6)
+
+- Redis cache-aside via Spring's cache abstraction, only for the public catalog's slow-changing parts: listing pages (`event-list`, 60s TTL), categories, and the published event detail (`event-detail`: event + line-up + images, 10m TTL). **Availability is never cached**: sessions (with `ticketsAvailable`), seat maps and tiers are read live and merged into the event detail response by the controller.
+- Admin writes evict after commit (transaction-aware cache manager, immediate writes). Listing pages are cleared wholesale (`@EvictsEventListings`) because their keys depend on filters; event detail is evicted by id. Free-text searches aren't cached. Redis errors fall back to the database.
+
 ## Security checklist
 
 - CORS: explicit allowlist of the two frontend origins, never `*`.
