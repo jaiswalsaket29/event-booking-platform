@@ -184,3 +184,9 @@ Template:
 - Why this way: before, two tabs refreshing at the same moment could both pass the "not revoked" check and both get new tokens. Rotation is only a security property if each token rotates exactly once. Doing it in one locked transaction also removes the controller's dependency on open-in-view (next entry).
 - Alternative considered: a conditional `UPDATE ... SET revoked = true WHERE token_hash = ? AND revoked = false` and checking the row count (trade-off: no explicit lock, equally atomic, but it can't tell "replayed" from "expired" for the error message without a second read).
 - Interview hook: "Token rotation is a compare-and-set: lock the row, check it's unused, flip it, in one transaction."
+
+## Open-in-view off (2026-10-05, Phase 5b)
+- What: `spring.jpa.open-in-view: false`. Hibernate sessions now end with the service transaction, so nothing can lazy-load in a controller or during JSON rendering.
+- Why this way: with OSIV on (Spring's default, which logs a warning), a controller touching a lazy association silently runs SQL outside any transaction and holds a DB connection for the whole request. It also hid a real dependency: the refresh endpoint failed with `LazyInitializationException` (500) as soon as OSIV was off (seen in `RefreshTokenTest` before the rotation fix). Services already return DTOs built inside their transactions; the full suite passes with OSIV off.
+- Alternative considered: keeping OSIV on (trade-off: fewer surprises while prototyping, but N+1 queries and connection hogging go unnoticed until production load).
+- Interview hook: "I turned off open-in-view so any lazy load outside a transaction fails loudly in tests instead of quietly in production."
