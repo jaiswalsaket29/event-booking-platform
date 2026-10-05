@@ -75,6 +75,7 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 - Retry = new `Payment` row with its own key, capped (config, default 3), only while the Redis hold is alive. Retry count is derived from `Payment` rows (no counter column).
 - On a known terminal failure, release seats/capacity explicitly in the same transaction as `Booking.FAILED`; release must be idempotent (races with TTL expiry).
 - Stuck `PENDING` bookings auto-resolve when the hold key expires (Redis keyspace notifications preferred over polling).
+- **Payment grace (Phase 5b):** expiry does not end a booking while a payment opened within `app.booking.payment-grace` (2m) is still `PENDING`; the sweeper retries after. A hold can therefore overrun its TTL by at most the grace plus one sweep interval, in exchange for never failing a booking whose payment is about to succeed.
 - **QR code:** zxing, generated at `CONFIRMED`, encodes `bookingReference`, regenerated on demand (not stored). One QR per booking.
 
 ## Security checklist

@@ -10,6 +10,9 @@ import java.time.Duration;
  * @param holdTtl                         how long a PENDING booking keeps its seats/capacity (default 10m)
  * @param maxTicketsPerBooking            tickets (GA quantity or seats) allowed in one booking
  * @param sweepGrace                      extra time past the TTL before the safety-net sweeper expires a hold
+ * @param paymentGrace                    an expired hold is not ended while a payment younger than this is
+ *                                        still PENDING (its outcome may be about to arrive); the sweeper
+ *                                        retries after. Bounds how long a hold can overrun its TTL.
  * @param configureKeyspaceNotifications  try {@code CONFIG SET notify-keyspace-events} at startup
  *                                        (turn off for managed Redis that forbids CONFIG; set it there instead)
  */
@@ -18,5 +21,6 @@ public record BookingProperties(
         Duration holdTtl,
         int maxTicketsPerBooking,
         Duration sweepGrace,
+        Duration paymentGrace,
         boolean configureKeyspaceNotifications) {
 }

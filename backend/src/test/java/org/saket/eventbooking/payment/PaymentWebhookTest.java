@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.saket.eventbooking.booking.dto.BookingResponse;
 import org.saket.eventbooking.booking.dto.CreateBookingRequest;
 import org.saket.eventbooking.booking.enums.BookingStatus;
+import org.saket.eventbooking.booking.hold.StaleHoldSweeper;
 import org.saket.eventbooking.booking.repository.BookingRepository;
 import org.saket.eventbooking.booking.service.BookingExpiryService;
 import org.saket.eventbooking.booking.service.BookingService;
@@ -23,6 +24,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.ResultActions;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,6 +43,7 @@ class PaymentWebhookTest extends IntegrationTest {
     @Autowired PaymentAttemptService attemptService;
     @Autowired PaymentRepository paymentRepository;
     @Autowired WebhookSignature signature;
+    @Autowired StaleHoldSweeper sweeper;
 
     private User user;
     private SessionResponse session;
@@ -159,11 +163,35 @@ class PaymentWebhookTest extends IntegrationTest {
         assertThat(bookingStatusOf(attempt.paymentId())).isEqualTo(BookingStatus.CONFIRMED);
     }
 
+    /** Backdates an attempt so it's older than app.booking.payment-grace (2m). */
+    private void ageBeyondPaymentGrace(UUID paymentId) {
+        Payment p = payment(paymentId);
+        p.setCreatedAt(Instant.now().minus(Duration.ofMinutes(5)));
+        paymentRepository.save(p);
+    }
+
+    @Test
+    void expiryWaitsForAnInFlightPaymentAndTheWebhookStillConfirms() throws Exception {
+        PaymentAttemptService.OpenedAttempt attempt = pendingAttempt();
+        UUID bookingId = paymentRepository.findBookingIdById(attempt.paymentId()).orElseThrow();
+
+        // the hold times out (Redis event, then the sweeper) while the customer's payment is processing
+        assertThat(expiryService.expire(bookingId)).isFalse();
+        sweeper.expireStale(Instant.now().plus(Duration.ofMinutes(11)));
+        assertThat(bookingRepository.findById(bookingId).orElseThrow().getStatus()).isEqualTo(BookingStatus.PENDING);
+
+        send(event("payment.succeeded", "txn_" + UUID.randomUUID(), attempt.paymentId(), "1200.00", null))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.result").value("APPLIED"));
+        assertThat(bookingRepository.findById(bookingId).orElseThrow().getStatus()).isEqualTo(BookingStatus.CONFIRMED);
+    }
+
     @Test
     void successAfterTheHoldExpiredIsRecordedAsALatePayment() throws Exception {
         PaymentAttemptService.OpenedAttempt attempt = pendingAttempt();
         UUID bookingId = paymentRepository.findBookingIdById(attempt.paymentId()).orElseThrow();
-        expiryService.expire(bookingId); // hold ran out while the payment was in flight
+        ageBeyondPaymentGrace(attempt.paymentId()); // no outcome for longer than the grace period
+        expiryService.expire(bookingId);
         assertThat(bookingRepository.findById(bookingId).orElseThrow().getStatus()).isEqualTo(BookingStatus.FAILED);
 
         send(event("payment.succeeded", "txn_" + UUID.randomUUID(), attempt.paymentId(), "1200.00", null))

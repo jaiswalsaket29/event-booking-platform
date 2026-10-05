@@ -47,6 +47,7 @@ class AdminBookingsTest extends IntegrationTest {
     @Autowired PaymentService paymentService;
     @Autowired PaymentAttemptService attemptService;
     @Autowired SessionService sessionService;
+    @Autowired org.saket.eventbooking.payment.repository.PaymentRepository paymentRepository;
 
     private String admin;
     private User alice;
@@ -158,6 +159,10 @@ class AdminBookingsTest extends IntegrationTest {
         SessionResponse session = fixtures.flatSession(bigEventId, venue.id(), daysFromNow(8), 10, "100");
         BookingResponse booking = bookingService.create(alice.getId(), new CreateBookingRequest(session.id(), null, 1, null));
         PaymentAttemptService.OpenedAttempt attempt = attemptService.open(alice.getId(), booking.id(), UUID.randomUUID().toString());
+        // the payment got no outcome for longer than app.booking.payment-grace, so expiry goes ahead
+        var payment = paymentRepository.findById(attempt.paymentId()).orElseThrow();
+        payment.setCreatedAt(java.time.Instant.now().minus(java.time.Duration.ofMinutes(5)));
+        paymentRepository.save(payment);
         expiryService.expire(booking.id());
         attemptService.applyOutcome(attempt.paymentId(), "txn_" + UUID.randomUUID(), ChargeResult.Status.SUCCEEDED,
                 null, new BigDecimal("100.00"));

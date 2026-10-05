@@ -2,12 +2,14 @@ package org.saket.eventbooking.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.saket.eventbooking.booking.config.BookingProperties;
 import org.saket.eventbooking.booking.entity.Booking;
 import org.saket.eventbooking.booking.enums.BookingStatus;
 import org.saket.eventbooking.payment.service.PaymentQueryService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -22,6 +24,7 @@ public class BookingExpiryService {
 
     private final BookingCheckoutService checkoutService;
     private final PaymentQueryService paymentQueryService;
+    private final BookingProperties properties;
 
     /**
      * Ends a still-PENDING booking and puts its tickets back on sale: FAILED if a payment was attempted,
@@ -31,6 +34,10 @@ public class BookingExpiryService {
      * transition, release" in one transaction. The second caller blocks on the lock, then sees the
      * booking is no longer PENDING and does nothing, so inventory is released exactly once.
      * Payment outcomes take the same lock first, so a late payment and an expiry can't both win.
+     * <p>
+     * Deferral: if a payment opened within {@code app.booking.payment-grace} is still PENDING, its
+     * outcome may be seconds away (the user has probably already paid), so the booking is left alone
+     * and the sweeper tries again on its next pass. After the grace period it expires as usual.
      *
      * @return true if this call performed the transition
      */
@@ -38,6 +45,10 @@ public class BookingExpiryService {
     public boolean expire(UUID bookingId) {
         Optional<Booking> locked = checkoutService.lock(bookingId);
         if (locked.isEmpty() || locked.get().getStatus() != BookingStatus.PENDING) {
+            return false;
+        }
+        if (paymentQueryService.hasPaymentInFlightSince(bookingId, Instant.now().minus(properties.paymentGrace()))) {
+            log.info("Hold expiry for booking {} deferred: a payment is in flight", bookingId);
             return false;
         }
         boolean attempted = paymentQueryService.countAttempts(bookingId) > 0;

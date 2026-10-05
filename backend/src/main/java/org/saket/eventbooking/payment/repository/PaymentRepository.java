@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,8 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
     long countByBookingId(UUID bookingId);
 
     boolean existsByBookingIdAndStatus(UUID bookingId, PaymentStatus status);
+
+    boolean existsByBookingIdAndStatusAndCreatedAtAfter(UUID bookingId, PaymentStatus status, Instant after);
 
     /** Just the owning booking's id, without loading the payment into the persistence context. */
     @Query("select p.booking.id from Payment p where p.id = :id")

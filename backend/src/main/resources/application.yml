@@ -51,6 +51,9 @@ app:
     # Safety net: the sweeper expires PENDING bookings older than hold-ttl + sweep-grace
     # (covers expiry events missed while the app was down).
     sweep-grace: 30s
+    # Don't end an expired hold while a payment opened within this window is still PENDING
+    # (the sweeper retries). Prevents failing a booking the customer has just paid for.
+    payment-grace: 2m
     sweeper:
       enabled: true
       interval: 60s

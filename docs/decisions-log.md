@@ -190,3 +190,9 @@ Template:
 - Why this way: with OSIV on (Spring's default, which logs a warning), a controller touching a lazy association silently runs SQL outside any transaction and holds a DB connection for the whole request. It also hid a real dependency: the refresh endpoint failed with `LazyInitializationException` (500) as soon as OSIV was off (seen in `RefreshTokenTest` before the rotation fix). Services already return DTOs built inside their transactions; the full suite passes with OSIV off.
 - Alternative considered: keeping OSIV on (trade-off: fewer surprises while prototyping, but N+1 queries and connection hogging go unnoticed until production load).
 - Interview hook: "I turned off open-in-view so any lazy load outside a transaction fails loudly in tests instead of quietly in production."
+
+## Payment grace on hold expiry (2026-10-05, Phase 5b)
+- What: `BookingExpiryService.expire` now leaves a PENDING booking alone if a payment opened within `app.booking.payment-grace` (2m) is still PENDING; the sweeper tries again on its next pass, and once the grace passes expiry proceeds as before (FAILED, since an attempt was made). Also recorded in `design-decisions.md`.
+- Why this way: with the simulated gateway's webhook taking ~1.5s (and real ones taking longer), a hold could expire between "customer paid" and "webhook arrived", failing a booking the customer had just paid for and turning it into a manual refund. Deferring briefly costs a little hold overrun (at most grace + one sweep interval) and removes that window. Tested: the Redis expiry and the sweeper both defer, then the success webhook confirms.
+- Alternative considered: extending the Redis hold TTL when a payment attempt opens (trade-off: also works, but spreads hold timing across two places and still needs a bound for payments that never resolve).
+- Interview hook: "Expiry yields to a payment in flight, for a bounded time, so a paying customer never loses their seats to a timer race."

@@ -4,10 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.common.exception.ConflictException;
 import org.saket.eventbooking.payment.dto.PaymentResponse;
 import org.saket.eventbooking.payment.entity.Payment;
+import org.saket.eventbooking.payment.enums.PaymentStatus;
 import org.saket.eventbooking.payment.repository.PaymentRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
@@ -30,6 +32,12 @@ public class PaymentQueryService {
     @Transactional(readOnly = true)
     public long countAttempts(UUID bookingId) {
         return paymentRepository.countByBookingId(bookingId);
+    }
+
+    /** Whether an attempt opened after {@code since} is still waiting for its outcome. */
+    @Transactional(readOnly = true)
+    public boolean hasPaymentInFlightSince(UUID bookingId, Instant since) {
+        return paymentRepository.existsByBookingIdAndStatusAndCreatedAtAfter(bookingId, PaymentStatus.PENDING, since);
     }
 
     /** The payment already created with this key, if any; 409 if the key belongs to another request. */
