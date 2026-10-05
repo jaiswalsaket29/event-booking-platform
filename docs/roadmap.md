@@ -46,13 +46,31 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] On `CONFIRMED`: generate `bookingReference`, QR (zxing) at `GET /api/v1/bookings/{id}/qr` (PNG), confirmation email via `EmailService` (`@Async`).
 - [x] Admin: bookings list with filters, dashboard stats endpoint (bookings/revenue per day, top events).
 
+### Phase 5b: Hardening (gaps found after Phase 5)
+- [ ] Cancellation cascade. Cancelling a session (admin `PUT /admin/sessions/{id}` with `CANCELLED`) or an event (`PUT /admin/events/{id}` with `CANCELLED`, which cancels its SCHEDULED sessions) must: end its PENDING bookings as CANCELLED and release their holds; mark its CONFIRMED bookings CANCELLED (seats released, flagged as refund owed; refunds stay out of scope); and refuse new holds/payments. Bookings are locked row by row (booking → inventory, as everywhere). Document the rule in `design-decisions.md`.
+- [ ] Late-payment window. Hold expiry (Redis listener and sweeper) must not fail a booking while a recent PENDING payment is in flight; defer it (the sweeper retries) until the payment settles or a grace period passes (config). Test: expiry during an in-flight payment, then a success webhook → CONFIRMED.
+- [ ] Turn off open-in-view (`spring.jpa.open-in-view: false`) and fix code that relied on it (e.g. `RefreshTokenService.validateAndRevoke` returning a lazy `User` to `AuthRefreshController`).
+- [ ] `POST /api/v1/bookings/{id}/cancel`: the owner abandons a PENDING checkout, releasing the hold now (CANCELLED with no attempt, FAILED if attempted). Refused while a payment is PENDING.
+- [ ] Test refresh-token replay: a rotated (revoked) token is rejected with 401.
+- [ ] Surface payments stuck in PENDING (no outcome after the hold ended) to admins: dashboard count and an admin bookings filter.
+- [ ] Bound `SimulatedPaymentGateway`'s in-memory idempotency map (it grows forever in a long-running demo).
+
 ### Phase 6: Polish
+
+Decide before building:
+- Caching vs. live availability: public event detail and session responses include `ticketsAvailable`, sessions and prices, which change on every booking. Cache only the slow-changing parts (event, line-up, images) or use a very short TTL; don't serve stale "3 left".
+- Rate-limit keys: login/forgot-password per IP + per email, booking creation per user. Behind a proxy (Phase 7) the client IP comes from trusted `X-Forwarded-For`.
+
 - [ ] Redis cache-aside on the public event list/detail, evicted on admin edits.
 - [ ] Rate limiting (Redis token bucket) on login, forgot-password, booking creation.
 - [ ] Image upload: pre-signed R2 URL endpoint behind an `ObjectStorage` interface. If no R2 credentials are configured, fall back to accepting an image URL directly.
 - [ ] OpenAPI/Swagger UI via springdoc (public in dev).
 
 ### Phase 7: Production
+
+Notes from the Phase 5 review:
+- Convert timestamp columns to `timestamptz` before real data exists (JVM is pinned to Asia/Kolkata in `main` but UTC in tests, and several columns default to the DB's `now()`).
+- Production must override the seeded admin password and `PAYMENT_WEBHOOK_SECRET` (a prod profile should refuse to start with the dev default).
 - [ ] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
 - [ ] Actuator health endpoint (public), everything else locked down.
 - [ ] GitHub Actions: `./mvnw verify` on push/PR; frontend builds.
