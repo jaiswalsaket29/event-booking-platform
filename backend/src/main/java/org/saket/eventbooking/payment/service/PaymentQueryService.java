@@ -54,10 +54,10 @@ public class PaymentQueryService {
         return Optional.of(PaymentResponse.from(payment.get()));
     }
 
-    /** Money taken for bookings that ended unpaid (needs a manual refund; refunds are out of scope). */
+    /** Money taken for bookings that won't be fulfilled (needs a manual refund; refunds are out of scope). */
     @Transactional(readOnly = true)
-    public long countLatePayments() {
-        return paymentRepository.countLatePayments();
+    public long countPaymentsNeedingRefund() {
+        return paymentRepository.countPaymentsNeedingRefund();
     }
 
     /** PENDING attempts whose booking already ended: no outcome ever arrived; check with the provider. */

@@ -5,12 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.saket.eventbooking.booking.config.BookingProperties;
 import org.saket.eventbooking.booking.entity.Booking;
 import org.saket.eventbooking.booking.enums.BookingStatus;
+import org.saket.eventbooking.booking.event.BookingCancelledByOrganiserEvent;
 import org.saket.eventbooking.booking.event.BookingConfirmedEvent;
 import org.saket.eventbooking.booking.hold.BookingHoldStore;
 import org.saket.eventbooking.booking.repository.BookingRepository;
 import org.saket.eventbooking.booking.repository.BookingSeatRepository;
 import org.saket.eventbooking.common.exception.ConflictException;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
+import org.saket.eventbooking.session.enums.SessionStatus;
 import org.saket.eventbooking.session.service.SessionInventoryService;
 import org.saket.eventbooking.session.service.seating.HeldInventory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -56,6 +58,9 @@ public class BookingCheckoutService {
             case CANCELLED, FAILED -> throw new ConflictException(
                     "This booking is " + booking.getStatus().name().toLowerCase() + "; start a new booking");
             case PENDING -> {
+                if (booking.getSession().getStatus() != SessionStatus.SCHEDULED) {
+                    throw new ConflictException("This show is no longer on sale; start a new booking");
+                }
                 if (!isHoldAlive(booking)) {
                     throw new ConflictException("The hold on these tickets has expired; start a new booking");
                 }
@@ -101,6 +106,17 @@ public class BookingCheckoutService {
         sessionInventoryService.release(heldBy(booking));
         afterCommit(() -> holdStore.remove(booking.getId()));
         log.info("Booking {} ended {}; tickets released", booking.getId(), terminalStatus);
+    }
+
+    /**
+     * CONFIRMED -> CANCELLED because the organiser cancelled the session. Seats stay BOOKED (the session
+     * is off sale, and they record what was sold). The successful payment now counts as a refund owed.
+     */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void cancelConfirmed(Booking booking) {
+        booking.transitionTo(BookingStatus.CANCELLED);
+        events.publishEvent(new BookingCancelledByOrganiserEvent(booking.getId()));
+        log.info("Confirmed booking {} cancelled by the organiser; refund owed", booking.getId());
     }
 
     public boolean isHoldAlive(Booking booking) {

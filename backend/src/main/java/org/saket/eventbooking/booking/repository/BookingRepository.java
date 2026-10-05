@@ -14,6 +14,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -47,6 +48,11 @@ public interface BookingRepository extends JpaRepository<Booking, UUID>, JpaSpec
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select b from Booking b where b.id = :id")
     Optional<Booking> findByIdForUpdate(@Param("id") UUID id);
+
+    /** Ordered by id so concurrent cascades lock bookings in the same order. */
+    @Query("select b.id from Booking b where b.session.id = :sessionId and b.status in :statuses order by b.id")
+    List<UUID> findIdsBySessionIdAndStatusIn(@Param("sessionId") UUID sessionId,
+                                             @Param("statuses") Collection<BookingStatus> statuses);
 
     @Query("select b.id from Booking b where b.status = :status and b.createdAt < :before order by b.createdAt")
     List<UUID> findIdsByStatusAndCreatedAtBefore(@Param("status") BookingStatus status, @Param("before") Instant before);

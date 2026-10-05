@@ -21,6 +21,8 @@ import org.saket.eventbooking.event.repository.EventArtistRepository;
 import org.saket.eventbooking.event.repository.EventImageRepository;
 import org.saket.eventbooking.event.repository.EventRepository;
 import org.saket.eventbooking.event.repository.EventSearchRepository;
+import org.saket.eventbooking.event.event.EventCancelledEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,6 +50,7 @@ public class EventService {
     private final EventImageRepository eventImageRepository;
     private final ArtistService artistService;
     private final EventSearchRepository eventSearchRepository;
+    private final ApplicationEventPublisher events;
 
     /** Public listing: published events with an upcoming scheduled session matching the filters. */
     @Transactional(readOnly = true)
@@ -121,14 +124,21 @@ public class EventService {
     }
 
     /**
-     * Note: setting CANCELLED here doesn't touch sessions or bookings yet. Cascading a cancellation
-     * to sessions and confirmed bookings is a booking-phase rule (see design-decisions.md).
+     * Moving to CANCELLED cascades in the same transaction: {@link EventCancelledEvent} → its scheduled
+     * sessions are cancelled → their bookings are cancelled (see design-decisions.md). A cancelled event
+     * can't be reopened, because the cascade can't be undone.
      */
     @Transactional
     public EventResponse update(UUID id, EventRequest request) {
         Event event = getEntity(id);
-        if (request.status() != null) {
+        if (request.status() != null && request.status() != event.getStatus()) {
+            if (event.getStatus() == EventStatus.CANCELLED) {
+                throw new BadRequestException("A cancelled event can't be reopened");
+            }
             event.setStatus(request.status());
+            if (request.status() == EventStatus.CANCELLED) {
+                events.publishEvent(new EventCancelledEvent(event.getId()));
+            }
         }
         apply(event, request);
         return EventResponse.from(event);

@@ -33,13 +33,16 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
 
     List<Payment> findByBookingIdIn(Collection<UUID> bookingIds);
 
-    /** Successful charges whose booking never got confirmed (hold expired first): refunds owed. */
+    /**
+     * Successful charges whose booking isn't CONFIRMED: paid after the hold ended, or the show was
+     * cancelled by the organiser. Each one is a refund owed.
+     */
     @Query("""
             select count(p) from Payment p
             where p.status = org.saket.eventbooking.payment.enums.PaymentStatus.SUCCESS
               and p.booking.status <> org.saket.eventbooking.booking.enums.BookingStatus.CONFIRMED
             """)
-    long countLatePayments();
+    long countPaymentsNeedingRefund();
 
     /** Attempts that never got an outcome although their booking has already ended. */
     @Query("""

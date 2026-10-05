@@ -12,6 +12,7 @@ import org.saket.eventbooking.payment.entity.Payment;
 import org.saket.eventbooking.payment.enums.PaymentStatus;
 import org.saket.eventbooking.payment.gateway.ChargeResult;
 import org.saket.eventbooking.payment.repository.PaymentRepository;
+import org.saket.eventbooking.session.enums.SessionStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,7 +46,7 @@ public class PaymentAttemptService {
         RECORDED,
         /** The payment was already terminal: a repeated webhook or sync result. No-op. */
         DUPLICATE,
-        /** Money was taken but the booking had already ended (hold expired first): needs a refund. */
+        /** Money was taken but the booking won't be fulfilled (hold ended first, or the show was cancelled): refund owed. */
         LATE_PAYMENT
     }
 
@@ -120,12 +121,17 @@ public class PaymentAttemptService {
             }
             payment.transitionTo(PaymentStatus.SUCCESS);
             payment.setPaidAt(Instant.now());
-            if (booking.getStatus() == BookingStatus.PENDING) {
+            boolean onSale = booking.getSession().getStatus() == SessionStatus.SCHEDULED;
+            if (booking.getStatus() == BookingStatus.PENDING && onSale) {
                 checkoutService.confirm(booking);
                 return Applied.APPLIED;
             }
+            if (booking.getStatus() == BookingStatus.PENDING) {
+                // Paid while the show was being cancelled: never confirm a ticket for a cancelled session.
+                checkoutService.endUnpaid(booking, BookingStatus.CANCELLED);
+            }
             // Refunds are out of scope; record the truth (money taken) and make it visible to admins.
-            log.error("LATE PAYMENT: payment {} succeeded after booking {} ended as {}; needs a manual refund",
+            log.error("LATE PAYMENT: payment {} succeeded but booking {} is {}; needs a manual refund",
                     paymentId, bookingId, booking.getStatus());
             return Applied.LATE_PAYMENT;
         }

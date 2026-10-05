@@ -27,8 +27,8 @@ class StatusTransitionsTest {
     }
 
     @ParameterizedTest
-    @EnumSource(value = BookingStatus.class, names = {"CONFIRMED", "FAILED", "CANCELLED"})
-    void terminalBookingStatesNeverChange(BookingStatus terminal) {
+    @EnumSource(value = BookingStatus.class, names = {"FAILED", "CANCELLED"})
+    void failedAndCancelledBookingsNeverChange(BookingStatus terminal) {
         Booking booking = new Booking();
         booking.transitionTo(BookingStatus.PENDING);
         booking.transitionTo(terminal);
@@ -36,6 +36,18 @@ class StatusTransitionsTest {
             assertThatThrownBy(() -> booking.transitionTo(next)).isInstanceOf(IllegalStatusTransitionException.class);
         }
         assertThat(booking.getStatus()).isEqualTo(terminal);
+    }
+
+    @Test
+    void confirmedBookingsCanOnlyBeCancelled() {
+        Booking booking = new Booking();
+        booking.transitionTo(BookingStatus.PENDING);
+        booking.transitionTo(BookingStatus.CONFIRMED);
+        for (BookingStatus next : new BookingStatus[]{BookingStatus.PENDING, BookingStatus.CONFIRMED, BookingStatus.FAILED}) {
+            assertThatThrownBy(() -> booking.transitionTo(next)).isInstanceOf(IllegalStatusTransitionException.class);
+        }
+        booking.transitionTo(BookingStatus.CANCELLED); // organiser cancellation
+        assertThat(booking.getStatus()).isEqualTo(BookingStatus.CANCELLED);
     }
 
     @Test

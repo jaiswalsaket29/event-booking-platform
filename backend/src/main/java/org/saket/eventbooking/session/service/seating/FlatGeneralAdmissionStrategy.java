@@ -52,8 +52,13 @@ public class FlatGeneralAdmissionStrategy implements SeatingStrategy {
      * {@code SELECT ... FOR UPDATE} and re-read. A plain locking query would hand back the instance
      * already in the persistence context with its possibly stale capacity; refresh re-reads it under
      * the lock, which is the value every other checkout is now waiting behind.
+     * <p>
+     * Flush first: refresh overwrites the in-memory entity with the row, which would silently throw
+     * away this transaction's own unflushed changes to the session (e.g. the CANCELLED status set just
+     * before a cancellation cascade releases capacity).
      */
     private void lockAndRefresh(Session session) {
+        entityManager.flush();
         entityManager.refresh(session, LockModeType.PESSIMISTIC_WRITE);
     }
 

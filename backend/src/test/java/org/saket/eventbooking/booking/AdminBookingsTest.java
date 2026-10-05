@@ -154,7 +154,7 @@ class AdminBookingsTest extends IntegrationTest {
 
     @Test
     void latePaymentsAreSurfacedForRefund() {
-        long before = statsService.stats(null, null).totals().latePaymentsNeedingRefund();
+        long before = statsService.stats(null, null).totals().paymentsNeedingRefund();
 
         SessionResponse session = fixtures.flatSession(bigEventId, venue.id(), daysFromNow(8), 10, "100");
         BookingResponse booking = bookingService.create(alice.getId(), new CreateBookingRequest(session.id(), null, 1, null));
@@ -167,7 +167,7 @@ class AdminBookingsTest extends IntegrationTest {
         attemptService.applyOutcome(attempt.paymentId(), "txn_" + UUID.randomUUID(), ChargeResult.Status.SUCCEEDED,
                 null, new BigDecimal("100.00"));
 
-        assertThat(statsService.stats(null, null).totals().latePaymentsNeedingRefund()).isEqualTo(before + 1);
+        assertThat(statsService.stats(null, null).totals().paymentsNeedingRefund()).isEqualTo(before + 1);
     }
 
     /** A booking that ended while its payment attempt was still PENDING (aged past the payment grace). */

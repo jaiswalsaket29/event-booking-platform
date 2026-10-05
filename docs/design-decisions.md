@@ -48,7 +48,7 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 - `Payment` is `@ManyToOne` to `Booking` — multiple attempts per booking.
 - `PasswordResetToken` and `EmailVerificationToken` are separate classes, no `@MappedSuperclass`.
 - `contact_messages.status` has DB default `NEW` (deliberate minor inconsistency).
-- Session cancellation cascading to confirmed bookings: needs a documented service-layer rule when implemented (mark bookings CANCELLED; refunds are future scope).
+- **Cancellation cascade (Phase 5b):** cancelling a session (or an event, which cancels its SCHEDULED sessions; COMPLETED ones are untouched) runs in one transaction via synchronous domain events (`EventCancelledEvent` → `SessionCancelledEvent` → booking listener). Each affected booking is locked in id order: PENDING → CANCELLED with its hold released; CONFIRMED → CANCELLED with seats left BOOKED, the customer emailed, and its successful payment counted as a refund owed (refunds themselves stay out of scope). Holds and payments require a SCHEDULED session, and a payment that lands on a cancelled session is never confirmed. Cancelled sessions and events can't be reopened; completed sessions can't be cancelled.
 
 ## Auth (Phase 2)
 
@@ -71,7 +71,7 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 
 - Simulated gateway (or Razorpay test mode). Webhook is the source of truth; handler idempotent on `transactionId`.
 - **Idempotency key is client-generated**, tied to the checkout screen's lifetime (not per click). Server does insert-or-fetch-existing: on unique-constraint conflict, return the existing `Payment`'s state. Frontend also disables the button on first click.
-- **State machine:** Payment `PENDING → SUCCESS | FAILED` (terminal). Booking `PENDING → CONFIRMED` (payment success), `→ FAILED` (retries exhausted, or timeout after an attempt), `→ CANCELLED` (timeout with no attempt). Nothing moves backward.
+- **State machine:** Payment `PENDING → SUCCESS | FAILED` (terminal). Booking `PENDING → CONFIRMED` (payment success), `→ FAILED` (retries exhausted, or timeout after an attempt), `→ CANCELLED` (timeout with no attempt, or user/organiser cancellation); `CONFIRMED → CANCELLED` only when the organiser cancels the show. Nothing moves backward.
 - Retry = new `Payment` row with its own key, capped (config, default 3), only while the Redis hold is alive. Retry count is derived from `Payment` rows (no counter column).
 - On a known terminal failure, release seats/capacity explicitly in the same transaction as `Booking.FAILED`; release must be idempotent (races with TTL expiry).
 - Stuck `PENDING` bookings auto-resolve when the hold key expires (Redis keyspace notifications preferred over polling).

@@ -29,8 +29,13 @@ import org.saket.eventbooking.session.enums.SessionStatus;
 import org.saket.eventbooking.session.repository.SessionRepository;
 import org.saket.eventbooking.session.repository.SessionSeatRepository;
 import org.saket.eventbooking.session.repository.TicketTierRepository;
+import org.saket.eventbooking.event.event.EventCancelledEvent;
+import org.saket.eventbooking.session.event.SessionCancelledEvent;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
@@ -62,6 +67,7 @@ public class SessionService {
     private final LocationService locationService;
     private final HallService hallService;
     private final SeatPriceCalculator seatPriceCalculator;
+    private final ApplicationEventPublisher events;
 
     // ---------------------------------------------------------------- creation
 
@@ -221,8 +227,8 @@ public class SessionService {
     // ---------------------------------------------------------------- updates
 
     /**
-     * Note: cancelling here only flips the status. Cascading a cancellation to bookings
-     * (mark them CANCELLED, refunds out of scope) is part of the booking phase.
+     * Updates timing and status. Moving to CANCELLED cascades (see {@link #cancel}); a cancelled session
+     * can't be reopened and a completed one can't be cancelled.
      */
     @Transactional
     public SessionResponse update(UUID id, SessionUpdateRequest request) {
@@ -231,10 +237,40 @@ public class SessionService {
         if (session.getStatus() == SessionStatus.CANCELLED && request.status() != SessionStatus.CANCELLED) {
             throw new BadRequestException("A cancelled session can't be reopened");
         }
+        if (session.getStatus() == SessionStatus.COMPLETED && request.status() == SessionStatus.CANCELLED) {
+            throw new BadRequestException("A completed session can't be cancelled");
+        }
         session.setStartTime(request.startTime());
         session.setEndTime(request.endTime());
-        session.setStatus(request.status());
+        if (request.status() == SessionStatus.CANCELLED) {
+            cancel(session);
+        } else {
+            session.setStatus(request.status());
+        }
         return toResponse(session);
+    }
+
+    /** An event was cancelled: cancel its sessions that haven't happened yet (same transaction). */
+    @EventListener
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void onEventCancelled(EventCancelledEvent event) {
+        for (Session session : sessionRepository.findByEventIdOrderByStartTime(event.eventId())) {
+            if (session.getStatus() == SessionStatus.SCHEDULED) {
+                cancel(session);
+            }
+        }
+    }
+
+    /**
+     * SCHEDULED -> CANCELLED and announce it. Listeners (the booking domain) run synchronously in this
+     * transaction: no new holds are possible (holds require SCHEDULED) and existing bookings are ended.
+     */
+    private void cancel(Session session) {
+        if (session.getStatus() == SessionStatus.CANCELLED) {
+            return;
+        }
+        session.setStatus(SessionStatus.CANCELLED);
+        events.publishEvent(new SessionCancelledEvent(session.getId()));
     }
 
     /** Removes the session with its seats and tiers. 409 once bookings reference it. */

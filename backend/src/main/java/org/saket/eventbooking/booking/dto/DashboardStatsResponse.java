@@ -18,12 +18,12 @@ public record DashboardStatsResponse(
         List<TopEvent> topEvents) {
 
     /**
-     * @param latePaymentsNeedingRefund all-time count of successful charges whose booking had already
-     *                                  ended (refunds are handled outside the app)
+     * @param paymentsNeedingRefund     all-time count of successful charges whose booking isn't confirmed
+     *                                  (paid too late, or the show was cancelled); refunds happen outside the app
      * @param stuckPendingPayments      all-time count of attempts still PENDING although their booking
      *                                  ended (no outcome ever arrived; check with the provider)
      */
-    public record Totals(long confirmedBookings, long ticketsSold, BigDecimal revenue, long latePaymentsNeedingRefund,
+    public record Totals(long confirmedBookings, long ticketsSold, BigDecimal revenue, long paymentsNeedingRefund,
                          long stuckPendingPayments) {
     }
 
