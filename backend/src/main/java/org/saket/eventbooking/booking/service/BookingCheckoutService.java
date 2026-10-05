@@ -64,6 +64,14 @@ public class BookingCheckoutService {
         return booking;
     }
 
+    /** Locks the caller's own booking; 404 if it isn't theirs. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public Booking lockOwn(UUID bookingId, UUID userId) {
+        return bookingRepository.findByIdForUpdate(bookingId)
+                .filter(b -> b.getUser().getId().equals(userId))
+                .orElseThrow(() -> new ResourceNotFoundException("Booking", bookingId));
+    }
+
     /** Locks any booking (system callers: payment outcomes, expiry). */
     @Transactional(propagation = Propagation.MANDATORY)
     public Optional<Booking> lock(UUID bookingId) {

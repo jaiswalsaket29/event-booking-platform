@@ -196,3 +196,9 @@ Template:
 - Why this way: with the simulated gateway's webhook taking ~1.5s (and real ones taking longer), a hold could expire between "customer paid" and "webhook arrived", failing a booking the customer had just paid for and turning it into a manual refund. Deferring briefly costs a little hold overrun (at most grace + one sweep interval) and removes that window. Tested: the Redis expiry and the sweeper both defer, then the success webhook confirms.
 - Alternative considered: extending the Redis hold TTL when a payment attempt opens (trade-off: also works, but spreads hold timing across two places and still needs a bound for payments that never resolve).
 - Interview hook: "Expiry yields to a payment in flight, for a bounded time, so a paying customer never loses their seats to a timer race."
+
+## User cancels a pending checkout (2026-10-05, Phase 5b)
+- What: `POST /api/v1/bookings/{id}/cancel` for the owner's PENDING booking. It locks the booking row, refuses if any payment is still PENDING (its outcome could still confirm the booking) or the booking isn't PENDING (409), and otherwise ends it through `BookingCheckoutService.endUnpaid`: CANCELLED, or FAILED if a payment was attempted (the same rule as hold expiry). Tickets are released and the hold key removed after commit. Another user's booking is 404.
+- Why this way: without it, backing out of checkout keeps seats locked for the full 10 minutes, which matters most for popular shows. Reusing `endUnpaid` keeps "how a PENDING booking ends" in one place with the same lock order and idempotency as expiry.
+- Alternative considered: letting the frontend just stop polling and waiting for expiry (trade-off: no endpoint, but held seats stay unavailable to everyone else for no reason).
+- Interview hook: "Abandoning checkout releases seats immediately, through the same code path as expiry, so there's one way a hold ends."

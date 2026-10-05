@@ -15,6 +15,7 @@ import org.saket.eventbooking.booking.repository.BookingRepository;
 import org.saket.eventbooking.booking.repository.BookingSeatRepository;
 import org.saket.eventbooking.common.dto.PageResponse;
 import org.saket.eventbooking.common.exception.BadRequestException;
+import org.saket.eventbooking.common.exception.ConflictException;
 import org.saket.eventbooking.common.exception.ForbiddenException;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
 import org.saket.eventbooking.location.service.HallService;
@@ -54,6 +55,7 @@ public class BookingService {
     private final BookingHoldStore holdStore;
     private final BookingProperties properties;
     private final PaymentQueryService paymentQueryService;
+    private final BookingCheckoutService checkoutService;
 
     /**
      * Starts a checkout: holds the inventory under row locks, records a PENDING booking, and starts the
@@ -96,6 +98,26 @@ public class BookingService {
         }
 
         holdStore.place(booking.getId(), properties.holdTtl());
+        return toResponses(List.of(booking)).getFirst();
+    }
+
+    /**
+     * The owner abandons a PENDING checkout: the hold ends now instead of at expiry. Ends as CANCELLED,
+     * or FAILED if a payment was attempted (same rule as hold expiry). Refused while a payment is in
+     * progress, because its outcome could still confirm the booking.
+     */
+    @Transactional
+    public BookingResponse cancelMine(UUID userId, UUID bookingId) {
+        Booking booking = checkoutService.lockOwn(bookingId, userId);
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new ConflictException("Only a pending checkout can be cancelled; this booking is "
+                    + booking.getStatus().name().toLowerCase());
+        }
+        if (paymentQueryService.hasPaymentInFlightSince(bookingId, Instant.EPOCH)) {
+            throw new ConflictException("A payment for this booking is in progress; wait for it to finish");
+        }
+        boolean attempted = paymentQueryService.countAttempts(bookingId) > 0;
+        checkoutService.endUnpaid(booking, attempted ? BookingStatus.FAILED : BookingStatus.CANCELLED);
         return toResponses(List.of(booking)).getFirst();
     }
 

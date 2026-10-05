@@ -56,6 +56,12 @@ public class BookingController {
         return bookingService.getMine(userId, id);
     }
 
+    /** Abandon a PENDING checkout and release the held tickets now. */
+    @PostMapping("/{id}/cancel")
+    public BookingResponse cancel(@AuthenticationPrincipal UUID userId, @PathVariable UUID id) {
+        return bookingService.cancelMine(userId, id);
+    }
+
     /** The entry QR (PNG) for a CONFIRMED booking; it encodes the booking reference. */
     @GetMapping(value = "/{id}/qr", produces = MediaType.IMAGE_PNG_VALUE)
     public ResponseEntity<byte[]> qr(@AuthenticationPrincipal UUID userId, @PathVariable UUID id) {
