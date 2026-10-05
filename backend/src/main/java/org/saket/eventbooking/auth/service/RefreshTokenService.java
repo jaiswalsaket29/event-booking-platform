@@ -1,9 +1,11 @@
 package org.saket.eventbooking.auth.service;
 
 import lombok.RequiredArgsConstructor;
+import org.saket.eventbooking.auth.dto.TokenResponse;
 import org.saket.eventbooking.auth.entity.RefreshToken;
 import org.saket.eventbooking.auth.exception.InvalidRefreshTokenException;
 import org.saket.eventbooking.auth.repository.RefreshTokenRepository;
+import org.saket.eventbooking.common.security.JwtTokenProvider;
 import org.saket.eventbooking.common.security.SecureTokens;
 import org.saket.eventbooking.user.entity.User;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,6 +21,7 @@ import java.util.UUID;
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Value("${app.jwt.refresh-token-expiry-days:30}")
     private int refreshTokenExpiryDays;
@@ -39,15 +42,18 @@ public class RefreshTokenService {
     }
 
     /**
-     * Validates a raw refresh token, revokes it, and returns the associated user —
-     * rotation happens here: caller is expected to call issue() again for the replacement.
+     * Refresh-token rotation in one transaction: lock the presented token's row, reject it if it was
+     * already used/revoked or has expired, revoke it, and issue a new access + refresh pair.
+     * The lock means two simultaneous refreshes with the same token (two tabs) rotate it exactly once;
+     * the loser sees it revoked and gets 401.
      */
-    public User validateAndRevoke(String rawToken) {
-        RefreshToken entity = refreshTokenRepository.findByTokenHash(hash(rawToken))
+    @Transactional
+    public TokenResponse rotate(String rawToken) {
+        RefreshToken entity = refreshTokenRepository.findByTokenHashForUpdate(hash(rawToken))
                 .orElseThrow(() -> new InvalidRefreshTokenException("Invalid refresh token"));
 
         if (Boolean.TRUE.equals(entity.getRevoked())) {
-            // Replay of an already-used/revoked token — a real theft-detection response
+            // Replay of an already-used/revoked token. A real theft-detection response
             // (revoke the whole family) is future scope; flag-and-reject is enough for now.
             throw new InvalidRefreshTokenException("Refresh token has already been used or revoked");
         }
@@ -56,9 +62,8 @@ public class RefreshTokenService {
         }
 
         entity.setRevoked(true);
-        refreshTokenRepository.save(entity);
-
-        return entity.getUser();
+        User user = entity.getUser(); // loaded inside this transaction
+        return new TokenResponse(jwtTokenProvider.generateAccessToken(user), issue(user));
     }
 
     /** Logout: revoke without issuing a replacement. */

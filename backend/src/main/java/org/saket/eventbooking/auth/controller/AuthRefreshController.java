@@ -4,8 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.auth.dto.RefreshRequest;
 import org.saket.eventbooking.auth.dto.TokenResponse;
 import org.saket.eventbooking.auth.service.RefreshTokenService;
-import org.saket.eventbooking.common.security.JwtTokenProvider;
-import org.saket.eventbooking.user.entity.User;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,16 +14,11 @@ import org.springframework.web.bind.annotation.*;
 public class AuthRefreshController {
 
     private final RefreshTokenService refreshTokenService;
-    private final JwtTokenProvider jwtTokenProvider;
 
+    /** Rotation: the presented refresh token is revoked and a new access + refresh pair is returned. */
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        User user = refreshTokenService.validateAndRevoke(request.refreshToken());
-
-        String newAccessToken = jwtTokenProvider.generateAccessToken(user);
-        String newRefreshToken = refreshTokenService.issue(user);
-
-        return ResponseEntity.ok(new TokenResponse(newAccessToken, newRefreshToken));
+        return ResponseEntity.ok(refreshTokenService.rotate(request.refreshToken()));
     }
 
     @PostMapping("/logout")

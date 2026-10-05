@@ -51,7 +51,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [ ] Late-payment window. Hold expiry (Redis listener and sweeper) must not fail a booking while a recent PENDING payment is in flight; defer it (the sweeper retries) until the payment settles or a grace period passes (config). Test: expiry during an in-flight payment, then a success webhook → CONFIRMED.
 - [ ] Turn off open-in-view (`spring.jpa.open-in-view: false`) and fix code that relied on it (e.g. `RefreshTokenService.validateAndRevoke` returning a lazy `User` to `AuthRefreshController`).
 - [ ] `POST /api/v1/bookings/{id}/cancel`: the owner abandons a PENDING checkout, releasing the hold now (CANCELLED with no attempt, FAILED if attempted). Refused while a payment is PENDING.
-- [ ] Test refresh-token replay: a rotated (revoked) token is rejected with 401.
+- [x] Test refresh-token replay: a rotated (revoked) token is rejected with 401.
 - [ ] Surface payments stuck in PENDING (no outcome after the hold ended) to admins: dashboard count and an admin bookings filter.
 - [ ] Bound `SimulatedPaymentGateway`'s in-memory idempotency map (it grows forever in a long-running demo).
 
