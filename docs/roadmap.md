@@ -74,7 +74,7 @@ Notes from the Phase 5 review:
 - Set `API_DOCS_ENABLED=false` in production (springdoc spec + Swagger UI are public whenever enabled).
 - Production must override the seeded admin password and `PAYMENT_WEBHOOK_SECRET` (a prod profile should refuse to start with the dev default).
 - [ ] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
-- [ ] Actuator health endpoint (public), everything else locked down.
+- [x] Actuator health endpoint (public), everything else locked down.
 - [ ] GitHub Actions: `./mvnw verify` on push/PR; frontend builds.
 - [ ] Deploy: backend + managed Postgres + Redis (Render/Railway/Fly), frontends on Vercel/Netlify. Document in the README.
 

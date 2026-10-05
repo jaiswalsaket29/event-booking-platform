@@ -247,3 +247,9 @@ Template:
 - Alternative considered: keeping `timestamp` and setting `hibernate.jdbc.time_zone: UTC` (trade-off: no migration, but `DEFAULT now()` columns and any SQL client still depend on their session zone).
 - Interview hook: "Store instants as timestamptz, run servers in UTC, and convert to a business zone only where a human-facing 'day' is computed."
 
+## Actuator health only (2026-10-05, Phase 7)
+- What: `spring-boot-starter-actuator` with web exposure limited to `health`, `show-details`/`show-components: never`, and probes on: `/actuator/health/liveness` (livenessState only) and `/actuator/health/readiness` (readinessState, db, redis). `SecurityConfig` permits `GET /actuator/health/**` and requires ADMIN for any other `/actuator/**` path as a second fence. `ActuatorTest` checks the public status, both probes, and that env/beans/heapdump/metrics are 401/403 for anonymous users and normal users and 404 even for admins.
+- Why this way: the hosting platform needs an unauthenticated URL to decide whether the instance is healthy, but actuator's other endpoints (env, heapdump, beans) leak secrets and internals. Exposure is the real lock; the security rule protects against someone widening exposure later. Splitting liveness from readiness means a database or Redis outage takes the instance out of rotation instead of making the platform restart it over and over.
+- Alternative considered: a custom `/api/v1/health` controller (trade-off: simple, but reinvents DB/Redis checks and the probe semantics platforms already understand).
+- Interview hook: "Liveness answers 'should you restart me', readiness answers 'should you send me traffic'; a database outage is the second, not the first."
+

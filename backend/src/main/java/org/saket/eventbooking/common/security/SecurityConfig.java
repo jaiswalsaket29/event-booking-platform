@@ -49,6 +49,9 @@ public class SecurityConfig {
                         // API docs; switched off entirely in production (API_DOCS_ENABLED=false)
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        // platform health checks; any other actuator endpoint is admin-only (and not exposed)
+                        .requestMatchers(HttpMethod.GET, "/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers("/actuator/**").hasRole("ADMIN")
                         // public catalog reads
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**", "/api/v1/events/**",
                                 "/api/v1/sessions/**", "/api/v1/artists/**").permitAll()

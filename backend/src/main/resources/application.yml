@@ -116,6 +116,26 @@ app:
     user-url: ${FRONTEND_USER_URL:http://localhost:5173}
 server:
   port: 8080
+management:
+  endpoints:
+    web:
+      exposure:
+        # Only health is exposed over HTTP; nothing else (env, beans, heapdump...) is reachable.
+        include: health
+  endpoint:
+    health:
+      # Public endpoint: status only, never component details.
+      show-details: never
+      show-components: never
+      probes:
+        enabled: true
+      group:
+        # liveness = the JVM is fine (restart if not); readiness = can serve traffic (needs DB and Redis).
+        # A database outage makes the instance unready, it doesn't get it restarted in a loop.
+        liveness:
+          include: livenessState
+        readiness:
+          include: readinessState,db,redis
 ---
 # Optional Google OAuth2 login. Off by default so the app runs without Google credentials.
 # Enable with SPRING_PROFILES_ACTIVE=google-oauth and set GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET.
