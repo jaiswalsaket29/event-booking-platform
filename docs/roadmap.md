@@ -63,7 +63,7 @@ Decide before building:
 
 - [x] Redis cache-aside on the public event list/detail, evicted on admin edits.
 - [x] Rate limiting (Redis token bucket) on login, forgot-password, booking creation.
-- [ ] Image upload: pre-signed R2 URL endpoint behind an `ObjectStorage` interface. If no R2 credentials are configured, fall back to accepting an image URL directly.
+- [x] Image upload: pre-signed R2 URL endpoint behind an `ObjectStorage` interface. If no R2 credentials are configured, fall back to accepting an image URL directly.
 - [ ] OpenAPI/Swagger UI via springdoc (public in dev).
 
 ### Phase 7: Production

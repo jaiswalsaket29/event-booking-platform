@@ -96,6 +96,7 @@ Role-based access (`@PreAuthorize`) enforces the admin/user split; `/api/v1/admi
 
 - Object storage (Cloudflare R2) with pre-signed upload URLs — backend never streams file bytes. Validate content type (`image/jpeg|png|webp`) and size before issuing the URL.
 - CDN-transform service for resizing; no extra DB fields beyond the existing `imageUrl` columns.
+- **Implemented (Phase 6):** `common/storage/ObjectStorage` with `R2ObjectStorage` (AWS SDK S3 presigner only; signing is local) and `UnconfiguredObjectStorage` (no credentials: upload off, images added by URL). `POST /api/v1/admin/uploads/images` validates type and size, generates the object key server-side (`<folder>/<yyyy>/<mm>/<uuid>.<ext>`), and signs Content-Type and Content-Length into the URL so the bucket enforces them. Image URL fields accept only http(s).
 
 ## Explicitly out of scope
 

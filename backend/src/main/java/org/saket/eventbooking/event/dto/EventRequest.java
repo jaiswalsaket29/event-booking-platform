@@ -1,6 +1,7 @@
 package org.saket.eventbooking.event.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import org.saket.eventbooking.event.enums.EventStatus;
@@ -10,7 +11,7 @@ public record EventRequest(
         @NotBlank @Size(max = 255) String title,
         @Size(max = 10000) String description,
         @NotBlank @Size(max = 100) String category,
-        @Size(max = 500) String imageUrl,
+        @Size(max = 500) @Pattern(regexp = EventImageRequest.HTTP_URL, message = "must be an http(s) URL") String imageUrl,
         EventStatus status,
         @Size(max = 50) String language,
         @Positive Integer durationMinutes,

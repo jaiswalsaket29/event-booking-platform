@@ -81,6 +81,17 @@ app:
     forgot-password-per-ip: { capacity: 10, refill-period: 15m }
     forgot-password-per-email: { capacity: 3, refill-period: 15m }
     booking-per-user: { capacity: 10, refill-period: 1m }
+  storage:
+    # Pre-signed direct uploads to Cloudflare R2. Leave the R2 values empty to turn uploads off;
+    # admins then add images by URL.
+    upload-url-ttl: 10m
+    max-image-size: 5MB
+    r2:
+      account-id: ${R2_ACCOUNT_ID:}
+      access-key-id: ${R2_ACCESS_KEY_ID:}
+      secret-access-key: ${R2_SECRET_ACCESS_KEY:}
+      bucket: ${R2_BUCKET:}
+      public-base-url: ${R2_PUBLIC_BASE_URL:}
   reporting:
     # Business time zone: dashboard "days" are calendar days here.
     zone: Asia/Kolkata
