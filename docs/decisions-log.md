@@ -235,3 +235,9 @@ Template:
 - Alternative considered: hand-rolling SigV4 query signing (trade-off: no SDK dependency, but security-sensitive code to maintain), or proxying uploads through the backend as multipart (simpler client, but the server handles every byte and needs its own size/streaming limits).
 - Interview hook: "The server signs a narrowly scoped, short-lived permission; the browser does the heavy lifting directly against object storage."
 
+## OpenAPI docs and Swagger UI (2026-10-05, Phase 6)
+- What: `springdoc-openapi-starter-webmvc-ui` 3.1.1 (the line built on Boot 4.1). Spec at `/v3/api-docs`, UI at `/swagger-ui.html`, both permitted anonymously in `SecurityConfig` and switched by `API_DOCS_ENABLED` (default true for dev; production sets false). `OpenApiConfig` adds the title, a short how-to (log in as the dev admin, use Authorize, idempotency key, simulated card tokens) and an HTTP bearer JWT scheme applied to all operations. `OpenApiDocsTest` checks the spec is public, covers user, payment and admin endpoints, and doesn't expose `@AuthenticationPrincipal` user ids as parameters.
+- Why this way: generated docs can't drift from the controllers, and Swagger UI gives the frontends (and anyone reviewing the portfolio) a clickable API. Disabling rather than securing the docs in production keeps the attack surface small without a second auth mechanism.
+- Alternative considered: hand-written OpenAPI YAML (trade-off: full control over wording, but it goes stale as soon as an endpoint changes).
+- Interview hook: "The API contract is generated from the code, public in dev and off in production."
+
