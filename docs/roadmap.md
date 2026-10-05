@@ -38,7 +38,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] Concurrency test: N threads booking the last seat / last capacity → exactly one succeeds.
 
 ### Phase 5: Payments
-- [x] `PaymentGateway` interface with a simulated implementation (deterministic success/failure via a test card or amount rule). Optional Razorpay test-mode implementation behind a profile.
+- [x] `PaymentGateway` interface with a simulated implementation (deterministic success/failure via a test card or amount rule). The optional Razorpay test-mode implementation behind a profile is **not built yet** (needs test-mode keys; see the Phase 5 entry in `decisions-log.md`).
 - [x] `POST /api/v1/bookings/{id}/payments` with an `Idempotency-Key` header: insert-or-fetch-existing.
 - [x] Booking/payment state machine with terminal states enforced in one place.
 - [x] Retry cap, explicit idempotent release on failure.
