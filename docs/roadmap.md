@@ -64,13 +64,14 @@ Decide before building:
 - [x] Redis cache-aside on the public event list/detail, evicted on admin edits.
 - [x] Rate limiting (Redis token bucket) on login, forgot-password, booking creation.
 - [x] Image upload: pre-signed R2 URL endpoint behind an `ObjectStorage` interface. If no R2 credentials are configured, fall back to accepting an image URL directly.
-- [ ] OpenAPI/Swagger UI via springdoc (public in dev).
+- [x] OpenAPI/Swagger UI via springdoc (public in dev).
 
 ### Phase 7: Production
 
 Notes from the Phase 5 review:
 - Convert timestamp columns to `timestamptz` before real data exists (JVM is pinned to Asia/Kolkata in `main` but UTC in tests, and several columns default to the DB's `now()`).
 - Behind the platform's proxy, set `server.forward-headers-strategy: native` (Tomcat RemoteIpValve, trusted proxies only) so rate limits see the real client IP; never read `X-Forwarded-For` directly.
+- Set `API_DOCS_ENABLED=false` in production (springdoc spec + Swagger UI are public whenever enabled).
 - Production must override the seeded admin password and `PAYMENT_WEBHOOK_SECRET` (a prod profile should refuse to start with the dev default).
 - [ ] Multi-stage `Dockerfile` for the backend; `application-prod.yml`; all secrets from env.
 - [ ] Actuator health endpoint (public), everything else locked down.

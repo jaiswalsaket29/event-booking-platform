@@ -46,6 +46,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1/auth/**").permitAll()
                         .requestMatchers("/error").permitAll()
+                        // API docs; switched off entirely in production (API_DOCS_ENABLED=false)
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         // public catalog reads
                         .requestMatchers(HttpMethod.GET, "/api/v1/locations/**", "/api/v1/events/**",

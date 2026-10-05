@@ -178,6 +178,13 @@
             </exclusions>
         </dependency>
 
+        <!-- OpenAPI 3 spec at /v3/api-docs and Swagger UI at /swagger-ui.html -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>3.1.1</version>
+        </dependency>
+
         <!-- Pre-signed upload URLs for Cloudflare R2 (S3-compatible). Only the presigner is used; signing
              is local, so the SDK's HTTP clients are left out. -->
         <dependency>
