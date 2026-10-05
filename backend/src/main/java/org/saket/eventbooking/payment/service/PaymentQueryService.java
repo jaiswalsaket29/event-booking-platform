@@ -60,6 +60,12 @@ public class PaymentQueryService {
         return paymentRepository.countLatePayments();
     }
 
+    /** PENDING attempts whose booking already ended: no outcome ever arrived; check with the provider. */
+    @Transactional(readOnly = true)
+    public long countStuckPendingPayments() {
+        return paymentRepository.countStuckPendingPayments();
+    }
+
     @Transactional(readOnly = true)
     public PaymentResponse get(UUID paymentId) {
         return PaymentResponse.from(paymentRepository.findById(paymentId).orElseThrow());

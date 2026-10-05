@@ -170,6 +170,43 @@ class AdminBookingsTest extends IntegrationTest {
         assertThat(statsService.stats(null, null).totals().latePaymentsNeedingRefund()).isEqualTo(before + 1);
     }
 
+    /** A booking that ended while its payment attempt was still PENDING (aged past the payment grace). */
+    private BookingResponse bookingWithStuckPayment() {
+        SessionResponse session = fixtures.flatSession(bigEventId, venue.id(), daysFromNow(8), 10, "100");
+        BookingResponse booking = bookingService.create(bob.getId(), new CreateBookingRequest(session.id(), null, 1, null));
+        PaymentAttemptService.OpenedAttempt attempt = attemptService.open(bob.getId(), booking.id(), UUID.randomUUID().toString());
+        var payment = paymentRepository.findById(attempt.paymentId()).orElseThrow();
+        payment.setCreatedAt(java.time.Instant.now().minus(java.time.Duration.ofMinutes(5)));
+        paymentRepository.save(payment);
+        expiryService.expire(booking.id());
+        return booking;
+    }
+
+    @Test
+    void stuckAndLatePaymentsAreFlaggedForAttention() throws Exception {
+        long stuckBefore = statsService.stats(null, null).totals().stuckPendingPayments();
+        BookingResponse stuck = bookingWithStuckPayment();
+        paidFlat(alice, bigEventId, "100", 1); // a normal confirmed booking: not flagged
+
+        assertThat(statsService.stats(null, null).totals().stuckPendingPayments()).isEqualTo(stuckBefore + 1);
+        mockMvc.perform(get("/api/v1/admin/bookings").header("Authorization", admin)
+                        .param("eventId", bigEventId.toString()).param("needsAttention", "true"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].booking.id").value(stuck.id().toString()))
+                .andExpect(jsonPath("$.content[0].booking.status").value("FAILED"))
+                .andExpect(jsonPath("$.content[0].payments[0].status").value("PENDING"));
+
+        // the late outcome finally arrives: now it's a late payment (refund owed), still flagged
+        UUID paymentId = paymentRepository.findByBookingIdIn(List.of(stuck.id())).getFirst().getId();
+        attemptService.applyOutcome(paymentId, "txn_" + UUID.randomUUID(), ChargeResult.Status.SUCCEEDED, null, null);
+        assertThat(statsService.stats(null, null).totals().stuckPendingPayments()).isEqualTo(stuckBefore);
+        mockMvc.perform(get("/api/v1/admin/bookings").header("Authorization", admin)
+                        .param("eventId", bigEventId.toString()).param("needsAttention", "true"))
+                .andExpect(jsonPath("$.content", hasSize(1)))
+                .andExpect(jsonPath("$.content[0].payments[0].status").value("SUCCESS"));
+    }
+
     @Test
     void customRangesAreZeroFilledAndValidated() throws Exception {
         LocalDate end = LocalDate.now(IST);

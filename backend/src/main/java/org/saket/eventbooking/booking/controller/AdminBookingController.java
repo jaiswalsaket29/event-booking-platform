@@ -35,7 +35,7 @@ public class AdminBookingController {
     /**
      * All bookings, newest first. Filters: {@code status}, {@code eventId}, {@code sessionId},
      * {@code q} (exact booking reference or part of the customer's email), {@code from}/{@code to}
-     * (ISO instants on creation time).
+     * (ISO instants on creation time), {@code needsAttention=true} (late or stuck payments).
      */
     @GetMapping("/bookings")
     public PageResponse<AdminBookingResponse> list(
@@ -45,8 +45,9 @@ public class AdminBookingController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant to,
+            @RequestParam(defaultValue = "false") boolean needsAttention,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return bookingService.adminSearch(new AdminBookingFilter(status, eventId, sessionId, q, from, to), pageable);
+        return bookingService.adminSearch(new AdminBookingFilter(status, eventId, sessionId, q, from, to, needsAttention), pageable);
     }
 
     @GetMapping("/bookings/{id}")

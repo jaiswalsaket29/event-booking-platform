@@ -202,3 +202,9 @@ Template:
 - Why this way: without it, backing out of checkout keeps seats locked for the full 10 minutes, which matters most for popular shows. Reusing `endUnpaid` keeps "how a PENDING booking ends" in one place with the same lock order and idempotency as expiry.
 - Alternative considered: letting the frontend just stop polling and waiting for expiry (trade-off: no endpoint, but held seats stay unavailable to everyone else for no reason).
 - Interview hook: "Abandoning checkout releases seats immediately, through the same code path as expiry, so there's one way a hold ends."
+
+## Payments that need attention (2026-10-05, Phase 5b)
+- What: dashboard totals gain `stuckPendingPayments` (attempts still PENDING although their booking ended: no outcome ever arrived), next to `latePaymentsNeedingRefund`. `GET /api/v1/admin/bookings?needsAttention=true` lists exactly the bookings with either problem, via a read-only `EXISTS` subquery on payments, along with their attempts.
+- Why this way: both cases come from deliberate choices (never guess an unknown gateway outcome; never silently drop money that did arrive) and need a human: check with the provider, or refund. A count on the dashboard plus a filter that lands on the affected bookings makes them actionable instead of buried in logs.
+- Alternative considered: auto-failing stuck payments at expiry (trade-off: tidier data, but if the charge actually succeeded the later webhook would be rejected by the state machine and the money would go unnoticed).
+- Interview hook: "Anything the system can't resolve automatically becomes a queue on the admin dashboard, not a log line."

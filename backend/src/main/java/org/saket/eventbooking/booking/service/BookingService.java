@@ -3,6 +3,8 @@ package org.saket.eventbooking.booking.service;
 import lombok.RequiredArgsConstructor;
 import org.saket.eventbooking.booking.config.BookingProperties;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
 import org.saket.eventbooking.booking.dto.AdminBookingFilter;
 import org.saket.eventbooking.booking.dto.AdminBookingResponse;
 import org.saket.eventbooking.booking.dto.BookingResponse;
@@ -20,6 +22,8 @@ import org.saket.eventbooking.common.exception.ForbiddenException;
 import org.saket.eventbooking.common.exception.ResourceNotFoundException;
 import org.saket.eventbooking.location.service.HallService;
 import org.saket.eventbooking.payment.dto.PaymentResponse;
+import org.saket.eventbooking.payment.entity.Payment;
+import org.saket.eventbooking.payment.enums.PaymentStatus;
 import org.saket.eventbooking.payment.service.PaymentQueryService;
 import org.saket.eventbooking.session.entity.Session;
 import org.saket.eventbooking.session.entity.SessionSeat;
@@ -165,6 +169,19 @@ public class BookingService {
                         ? cb.equal(root.get("bookingReference"), q.toUpperCase(Locale.ROOT))
                         : cb.like(cb.lower(root.get("user").get("email")),
                         "%" + escapeLike(q.toLowerCase(Locale.ROOT)) + "%", '\\'));
+            }
+            if (filter.needsAttention()) {
+                // A read-only subquery on payments (not a call into the payment domain's repository).
+                Subquery<UUID> problems = query.subquery(UUID.class);
+                Root<Payment> payment = problems.from(Payment.class);
+                problems.select(payment.get("booking").get("id")).where(
+                        cb.equal(payment.get("booking").get("id"), root.get("id")),
+                        cb.or(
+                                cb.and(cb.equal(payment.get("status"), PaymentStatus.SUCCESS),
+                                        cb.notEqual(root.get("status"), BookingStatus.CONFIRMED)),
+                                cb.and(cb.equal(payment.get("status"), PaymentStatus.PENDING),
+                                        cb.notEqual(root.get("status"), BookingStatus.PENDING))));
+                predicates.add(cb.exists(problems));
             }
             return cb.and(predicates.toArray(Predicate[]::new));
         };

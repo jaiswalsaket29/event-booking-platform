@@ -20,8 +20,11 @@ public record DashboardStatsResponse(
     /**
      * @param latePaymentsNeedingRefund all-time count of successful charges whose booking had already
      *                                  ended (refunds are handled outside the app)
+     * @param stuckPendingPayments      all-time count of attempts still PENDING although their booking
+     *                                  ended (no outcome ever arrived; check with the provider)
      */
-    public record Totals(long confirmedBookings, long ticketsSold, BigDecimal revenue, long latePaymentsNeedingRefund) {
+    public record Totals(long confirmedBookings, long ticketsSold, BigDecimal revenue, long latePaymentsNeedingRefund,
+                         long stuckPendingPayments) {
     }
 
     public record Day(LocalDate date, long confirmedBookings, long ticketsSold, BigDecimal revenue) {

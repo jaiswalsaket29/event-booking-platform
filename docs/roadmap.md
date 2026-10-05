@@ -52,7 +52,7 @@ The goal is to ship a working, deployed, end-to-end product for a portfolio. Ord
 - [x] Turn off open-in-view (`spring.jpa.open-in-view: false`) and fix code that relied on it (e.g. `RefreshTokenService.validateAndRevoke` returning a lazy `User` to `AuthRefreshController`).
 - [x] `POST /api/v1/bookings/{id}/cancel`: the owner abandons a PENDING checkout, releasing the hold now (CANCELLED with no attempt, FAILED if attempted). Refused while a payment is PENDING.
 - [x] Test refresh-token replay: a rotated (revoked) token is rejected with 401.
-- [ ] Surface payments stuck in PENDING (no outcome after the hold ended) to admins: dashboard count and an admin bookings filter.
+- [x] Surface payments stuck in PENDING (no outcome after the hold ended) to admins: dashboard count and an admin bookings filter.
 - [x] Bound `SimulatedPaymentGateway`'s in-memory idempotency map (it grows forever in a long-running demo).
 
 ### Phase 6: Polish

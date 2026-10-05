@@ -40,4 +40,12 @@ public interface PaymentRepository extends JpaRepository<Payment, UUID> {
               and p.booking.status <> org.saket.eventbooking.booking.enums.BookingStatus.CONFIRMED
             """)
     long countLatePayments();
+
+    /** Attempts that never got an outcome although their booking has already ended. */
+    @Query("""
+            select count(p) from Payment p
+            where p.status = org.saket.eventbooking.payment.enums.PaymentStatus.PENDING
+              and p.booking.status <> org.saket.eventbooking.booking.enums.BookingStatus.PENDING
+            """)
+    long countStuckPendingPayments();
 }

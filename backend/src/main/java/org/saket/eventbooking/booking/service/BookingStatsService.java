@@ -98,7 +98,7 @@ public class BookingStatsService {
                 .toList();
 
         DashboardStatsResponse.Totals totals = new DashboardStatsResponse.Totals(rows.size(), tickets(rows),
-                revenue(rows), paymentQueryService.countLatePayments());
+                revenue(rows), paymentQueryService.countLatePayments(), paymentQueryService.countStuckPendingPayments());
         return new DashboardStatsResponse(start, end, zone.getId(), totals, daily, topEvents);
     }
 
